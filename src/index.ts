@@ -8,6 +8,8 @@ export { default as Accordion } from './Accordion';
 export type { AccordionProps } from './Accordion';
 export { default as Checkbox } from './Checkbox';
 export type { CheckboxProps } from './Checkbox';
+export { default as ComboField } from './ComboField';
+export type { ComboFieldProps } from './ComboField';
 export { default as IconTooltip } from './IconTooltip';
 export type { IconTooltipProps } from './IconTooltip';
 export { default as RadioButton } from './RadioButton';
