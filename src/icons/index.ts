@@ -1,10 +1,12 @@
 export type { IconProps } from './createIcon';
 export { AddIcon } from './AddIcon';
+export { AlertOutlineIcon } from './AlertOutlineIcon';
 export { CalendarIcon } from './CalendarIcon';
 export { CaretDownIcon } from './CaretDownIcon';
 export { CheckDoubleIcon } from './CheckDoubleIcon';
 export { CheckmarkIcon } from './CheckmarkIcon';
 export { CheckmarkFilledAltIcon } from './CheckmarkFilledAltIcon';
+export { CheckmarkOutlineIcon } from './CheckmarkOutlineIcon';
 export { ChatIcon } from './ChatIcon';
 export { ChevronDownIcon } from './ChevronDownIcon';
 export { ChevronLeftIcon } from './ChevronLeftIcon';

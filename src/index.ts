@@ -48,6 +48,8 @@ export { default as IconTooltip } from './IconTooltip';
 export type { IconTooltipProps } from './IconTooltip';
 export { default as ImagePlaceholder, getInitials } from './ImagePlaceholder';
 export type { ImagePlaceholderProps } from './ImagePlaceholder';
+export { default as InfoNote } from './InfoNote';
+export type { InfoNoteAction, InfoNoteProps, InfoNoteType } from './InfoNote';
 export { default as MultiselectField } from './MultiselectField';
 export type {
   MultiselectFieldOption,
