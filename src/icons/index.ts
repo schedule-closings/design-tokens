@@ -1,5 +1,10 @@
 export type { IconProps } from './createIcon';
+export { CheckDoubleIcon } from './CheckDoubleIcon';
+export { CheckmarkIcon } from './CheckmarkIcon';
 export { ChevronDownIcon } from './ChevronDownIcon';
 export { ChevronUpIcon } from './ChevronUpIcon';
+export { CloseIcon } from './CloseIcon';
 export { InfoOutlineIcon } from './InfoOutlineIcon';
+export { ViewFilledIcon } from './ViewFilledIcon';
+export { ViewOffFilledIcon } from './ViewOffFilledIcon';
 export { WarningOutlineIcon } from './WarningOutlineIcon';
