@@ -82,6 +82,8 @@ export { default as MiniFooter } from './MiniFooter';
 export type { MiniFooterLink, MiniFooterProps } from './MiniFooter';
 export { default as Modal } from './Modal';
 export type { ModalProps } from './Modal';
+export { default as ReleaseNotesModal } from './ReleaseNotesModal';
+export type { ReleaseNotesModalProps } from './ReleaseNotesModal';
 export { default as ProfileSwitcherField } from './ProfileSwitcherField';
 export type {
   ProfileSwitcherChildOption,
