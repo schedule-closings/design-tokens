@@ -68,6 +68,8 @@ export { default as ImagePlaceholder, getInitials } from './ImagePlaceholder';
 export type { ImagePlaceholderProps } from './ImagePlaceholder';
 export { default as InfoNote } from './InfoNote';
 export type { InfoNoteAction, InfoNoteProps, InfoNoteType } from './InfoNote';
+export { default as InteractiveDotCanvas } from './InteractiveDotCanvas';
+export type { InteractiveDotCanvasProps } from './InteractiveDotCanvas';
 export { default as LocationMarkerPin, LocationPeekCard } from './LocationMarkerPin';
 export type { AccessType, LocationMarkerPinProps, LocationPeekCardProps } from './LocationMarkerPin';
 export { default as MultiselectField } from './MultiselectField';
