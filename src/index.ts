@@ -64,6 +64,8 @@ export { default as Spinner } from './Spinner';
 export type { SpinnerProps } from './Spinner';
 export { default as StatePill, StatePillOverflow, StatePillRow } from './StatePill';
 export type { StatePillOverflowProps, StatePillProps, StatePillRowProps, StatePillVariant } from './StatePill';
+export { default as Stepper } from './Stepper';
+export type { StepperProps, StepperStepConfig } from './Stepper';
 export { default as StatusChip } from './StatusChip';
 export type { StatusChipProps } from './StatusChip';
 export { default as TextareaField } from './TextareaField';
