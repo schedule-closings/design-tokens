@@ -30,6 +30,8 @@ export { default as ComboField } from './ComboField';
 export type { ComboFieldProps } from './ComboField';
 export { default as IconTooltip } from './IconTooltip';
 export type { IconTooltipProps } from './IconTooltip';
+export { default as ImagePlaceholder, getInitials } from './ImagePlaceholder';
+export type { ImagePlaceholderProps } from './ImagePlaceholder';
 export { default as MultiselectField } from './MultiselectField';
 export type {
   MultiselectFieldOption,
