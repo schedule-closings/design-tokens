@@ -27,6 +27,8 @@ export { HelpFilledIcon } from './HelpFilledIcon';
 export { ImageIcon } from './ImageIcon';
 export { LocationFilledIcon } from './LocationFilledIcon';
 export { LocationOutlineIcon } from './LocationOutlineIcon';
+export { LightFilledIcon } from './LightFilledIcon';
+export { MoonFilledIcon } from './MoonFilledIcon';
 export { PhoneIcon } from './PhoneIcon';
 export { SearchIcon } from './SearchIcon';
 export { SettingsAdjustIcon } from './SettingsAdjustIcon';
