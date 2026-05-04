@@ -12,6 +12,8 @@ export { default as IconTooltip } from './IconTooltip';
 export type { IconTooltipProps } from './IconTooltip';
 export { default as RadioButton } from './RadioButton';
 export type { RadioButtonProps } from './RadioButton';
+export { default as SelectField } from './SelectField';
+export type { FieldOption, SelectFieldProps } from './SelectField';
 export { default as TextareaField } from './TextareaField';
 export type { TextareaFieldProps } from './TextareaField';
 export { default as TextInputField } from './TextInputField';
