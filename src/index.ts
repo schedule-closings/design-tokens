@@ -26,6 +26,14 @@ export type {
   DatePickerValue,
   DatePickerVariant,
 } from './DatePickerField';
+export { default as CalendarEventBlock } from './CalendarEventBlock';
+export type {
+  CalendarEventBlockProps,
+  EventType,
+  EventTypeAlias,
+  TransactionColorSet,
+  TransactionType,
+} from './CalendarEventBlock';
 export { default as DurationField } from './DurationField';
 export type { Duration, DurationFieldProps, DurationUnit } from './DurationField';
 export { default as ComboField } from './ComboField';
