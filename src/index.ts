@@ -96,6 +96,17 @@ export { default as RadioButton } from './RadioButton';
 export type { RadioButtonProps } from './RadioButton';
 export { default as SelectField } from './SelectField';
 export type { FieldOption, SelectFieldProps } from './SelectField';
+export { default as SideNav } from './SideNav';
+export type {
+  AccountCategory,
+  AccountType,
+  IndividualProfileChild,
+  IndividualProfileOption,
+  SetupChecklistItem,
+  SetupChecklistItemStatus,
+  SideNavItem,
+  SideNavProps,
+} from './SideNav';
 export { default as Spinner } from './Spinner';
 export type { SpinnerProps } from './Spinner';
 export { default as StatePill, StatePillOverflow, StatePillRow } from './StatePill';
