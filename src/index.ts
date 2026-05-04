@@ -30,6 +30,8 @@ export { default as DurationField } from './DurationField';
 export type { Duration, DurationFieldProps, DurationUnit } from './DurationField';
 export { default as ComboField } from './ComboField';
 export type { ComboFieldProps } from './ComboField';
+export { default as DataTable } from './DataTable';
+export type { ColumnDef, DataTableProps } from './DataTable';
 export { default as IconTooltip } from './IconTooltip';
 export type { IconTooltipProps } from './IconTooltip';
 export { default as ImagePlaceholder, getInitials } from './ImagePlaceholder';
