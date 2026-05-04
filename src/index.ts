@@ -20,6 +20,8 @@ export type {
   ArrowStepProgressProps,
   ArrowStepProgressStepConfig,
 } from './ArrowStepProgress';
+export { default as AppShell } from './AppShell';
+export type { AppShellProps } from './AppShell';
 export { default as BaseButton } from './BaseButton';
 export type {
   BaseButtonColor,
