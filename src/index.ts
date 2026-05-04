@@ -141,6 +141,8 @@ export { default as Tooltip } from './Tooltip';
 export type { TooltipProps } from './Tooltip';
 export { default as TruncatedText } from './TruncatedText';
 export type { TruncatedTextProps } from './TruncatedText';
+export { default as Walkthrough } from './Walkthrough';
+export type { WalkthroughProps, WalkthroughStep } from './Walkthrough';
 export { statesByCodes, US_STATES } from './usStates';
 export type { USState } from './usStates';
 export * from './icons';
