@@ -8,6 +8,8 @@ export { default as Accordion } from './Accordion';
 export type { AccordionProps } from './Accordion';
 export { default as Checkbox } from './Checkbox';
 export type { CheckboxProps } from './Checkbox';
+export { default as Chip } from './Chip';
+export type { ChipColor, ChipProps } from './Chip';
 export { default as DatePickerField, Calendar } from './DatePickerField';
 export type {
   CalendarProps,
@@ -21,6 +23,12 @@ export { default as ComboField } from './ComboField';
 export type { ComboFieldProps } from './ComboField';
 export { default as IconTooltip } from './IconTooltip';
 export type { IconTooltipProps } from './IconTooltip';
+export { default as MultiselectField } from './MultiselectField';
+export type {
+  MultiselectFieldOption,
+  MultiselectFieldProps,
+  MultiselectOptionBadge,
+} from './MultiselectField';
 export { default as RadioButton } from './RadioButton';
 export type { RadioButtonProps } from './RadioButton';
 export { default as SelectField } from './SelectField';
@@ -29,6 +37,10 @@ export { default as TextareaField } from './TextareaField';
 export type { TextareaFieldProps } from './TextareaField';
 export { default as TextInputField } from './TextInputField';
 export type { TextInputFieldProps, TextInputFieldSuggestion } from './TextInputField';
+export { default as TagField } from './TagField';
+export type { TagFieldProps } from './TagField';
+export { default as TagSelectField } from './TagSelectField';
+export type { TagSelectFieldProps, TagSelectOption } from './TagSelectField';
 export { default as TimePickerField } from './TimePickerField';
 export type { TimePickerFieldProps, TimePickerFormat } from './TimePickerField';
 export { default as Toggle } from './Toggle';
