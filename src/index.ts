@@ -58,6 +58,8 @@ export type {
 } from './MultiselectField';
 export { default as MiniFooter } from './MiniFooter';
 export type { MiniFooterLink, MiniFooterProps } from './MiniFooter';
+export { default as Modal } from './Modal';
+export type { ModalProps } from './Modal';
 export { default as RadioButton } from './RadioButton';
 export type { RadioButtonProps } from './RadioButton';
 export { default as SelectField } from './SelectField';
