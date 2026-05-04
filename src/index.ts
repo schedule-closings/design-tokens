@@ -6,6 +6,13 @@ export { default as SmoothBox } from './SmoothBox';
 export type { SmoothBoxProps } from './SmoothBox';
 export { default as Accordion } from './Accordion';
 export type { AccordionProps } from './Accordion';
+export { default as BaseButton } from './BaseButton';
+export type {
+  BaseButtonColor,
+  BaseButtonProps,
+  BaseButtonSize,
+  BaseButtonVariant,
+} from './BaseButton';
 export { default as Checkbox } from './Checkbox';
 export type { CheckboxProps } from './Checkbox';
 export { default as Chip } from './Chip';
@@ -33,6 +40,8 @@ export { default as RadioButton } from './RadioButton';
 export type { RadioButtonProps } from './RadioButton';
 export { default as SelectField } from './SelectField';
 export type { FieldOption, SelectFieldProps } from './SelectField';
+export { default as Spinner } from './Spinner';
+export type { SpinnerProps } from './Spinner';
 export { default as TextareaField } from './TextareaField';
 export type { TextareaFieldProps } from './TextareaField';
 export { default as TextInputField } from './TextInputField';
