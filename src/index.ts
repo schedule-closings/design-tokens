@@ -14,6 +14,8 @@ export { default as RadioButton } from './RadioButton';
 export type { RadioButtonProps } from './RadioButton';
 export { default as TextareaField } from './TextareaField';
 export type { TextareaFieldProps } from './TextareaField';
+export { default as TextInputField } from './TextInputField';
+export type { TextInputFieldProps, TextInputFieldSuggestion } from './TextInputField';
 export { default as Toggle } from './Toggle';
 export type { ToggleProps, ToggleSize, ToggleStyle } from './Toggle';
 export { default as ToggleField } from './ToggleField';
