@@ -74,6 +74,8 @@ export { default as LocationMarkerPin, LocationPeekCard } from './LocationMarker
 export type { AccessType, LocationMarkerPinProps, LocationPeekCardProps } from './LocationMarkerPin';
 export { default as LocationSuggestionField } from './LocationSuggestionField';
 export type { LocationSuggestionFieldProps, Suggestion } from './LocationSuggestionField';
+export { default as LoggedOutHeader } from './LoggedOutHeader';
+export type { LoggedOutHeaderBreakpoint, LoggedOutHeaderProps } from './LoggedOutHeader';
 export { default as MultiselectField } from './MultiselectField';
 export type {
   MultiselectFieldOption,
