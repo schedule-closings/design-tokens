@@ -1,6 +1,6 @@
 {
   "name": "@schedule-closings/design-tokens",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Schedule Closings design tokens and theme sourced from scplayground",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
