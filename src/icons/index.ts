@@ -14,6 +14,7 @@ export { CloseIcon } from './CloseIcon';
 export { CloseFilledIcon } from './CloseFilledIcon';
 export { DataEmptyIcon } from './DataEmptyIcon';
 export { EmailIcon } from './EmailIcon';
+export { FilterIcon } from './FilterIcon';
 export { InfoOutlineIcon } from './InfoOutlineIcon';
 export { HelpFilledIcon } from './HelpFilledIcon';
 export { ImageIcon } from './ImageIcon';
