@@ -15,7 +15,7 @@ export const shimmer = keyframes`
 // MapSkeleton styled components
 // ---------------------------------------------------------------------------
 
-/** Outer skeleton wrapper — rounded, colored background with hidden overflow */
+/** Outer skeleton wrapper - rounded, colored background with hidden overflow */
 export const SkeletonRoot = styled(Box)(({ theme }) => ({
   width: '100%',
   height: '100%',

@@ -1,10 +1,10 @@
 'use client';
 
 /**
- * CustomMapInner — React-Leaflet map with CSS filter theming
+ * CustomMapInner - React-Leaflet map with CSS filter theming
  *
  * This is the actual map implementation using react-leaflet.
- * It is dynamically imported by CustomMap.tsx with ssr: false.
+ * It is lazy-loaded by CustomMap.tsx after mount.
  *
  * CSS filter theming targets ONLY the tile pane (.leaflet-tile-pane) so that
  * markers, popups, and other overlays remain crisp and unaffected.
@@ -88,7 +88,7 @@ L.Icon.Default.mergeOptions({
 });
 
 // ---------------------------------------------------------------------------
-// RecenterControl — Leaflet topleft button that snaps back to the property pin
+// RecenterControl - Leaflet topleft button that snaps back to the property pin
 // ---------------------------------------------------------------------------
 function RecenterControl({ lat, lng, recenterTarget }: { lat: number; lng: number; recenterTarget?: { lat: number; lng: number; zoom?: number } }) {
   const map = useMap();
@@ -130,7 +130,7 @@ function RecenterControl({ lat, lng, recenterTarget }: { lat: number; lng: numbe
       title="Recenter"
       onClick={(e) => {
         e.preventDefault();
-        // Preserve the user's current zoom — recenter only translates the
+        // Preserve the user's current zoom - recenter only translates the
         // viewport to the reference location, never overrides their zoom.
         map.setView([targetLat, targetLng], map.getZoom());
       }}
@@ -143,7 +143,7 @@ function RecenterControl({ lat, lng, recenterTarget }: { lat: number; lng: numbe
 }
 
 // ---------------------------------------------------------------------------
-// MapRecenter — re-centers the map when lat/lng props change
+// MapRecenter - re-centers the map when lat/lng props change
 // ---------------------------------------------------------------------------
 function MapRecenter({ lat, lng, zoom, recenterKey }: { lat: number; lng: number; zoom?: number; recenterKey?: number }) {
   const map = useMap();
@@ -158,7 +158,7 @@ function MapRecenter({ lat, lng, zoom, recenterKey }: { lat: number; lng: number
 }
 
 // ---------------------------------------------------------------------------
-// ViewportTracker — fires onViewportChange whenever the user pans / zooms /
+// ViewportTracker - fires onViewportChange whenever the user pans / zooms /
 // any map move ends. Lets the page react to manual viewport changes (e.g.
 // user pans into a supported region and we want to restore a filtered list).
 // ---------------------------------------------------------------------------
@@ -177,13 +177,13 @@ function ViewportTracker({ onViewportChange }: { onViewportChange?: (c: { lat: n
 }
 
 // ---------------------------------------------------------------------------
-// ZoomWatcher — toggles a CSS class on the map container based on zoom level
+// ZoomWatcher - toggles a CSS class on the map container based on zoom level
 // so that pin shadows can be hidden when zoomed out and pins overlap.
 // ---------------------------------------------------------------------------
 const SHADOW_ZOOM_THRESHOLD = 10;
 
 // ---------------------------------------------------------------------------
-// MapClickHandler — calls onMapClick when map background is clicked
+// MapClickHandler - calls onMapClick when map background is clicked
 // ---------------------------------------------------------------------------
 function MapClickHandler({ onMapClick }: { onMapClick?: (latlng: { lat: number; lng: number }) => void }) {
   const map = useMap();
@@ -218,7 +218,7 @@ function ZoomWatcher() {
 }
 
 // ---------------------------------------------------------------------------
-// PeekOverlay — viewport-aware floating card for the active marker
+// PeekOverlay - viewport-aware floating card for the active marker
 //
 // Converts the active marker's lat/lng to pixel position and places the
 // peek card so it doesn't obscure the pin and stays within the map bounds.
@@ -285,7 +285,7 @@ function PeekOverlay({ markers }: { markers?: MapMarker[] }) {
     setVisible(true);
   }, [computePos]);
 
-  // Measure card height into a ref — no state update, no extra render cycle
+  // Measure card height into a ref - no state update, no extra render cycle
   useEffect(() => {
     if (cardRef.current && visible) {
       const h = cardRef.current.offsetHeight;
@@ -351,7 +351,7 @@ function PeekOverlay({ markers }: { markers?: MapMarker[] }) {
 }
 
 // ---------------------------------------------------------------------------
-// ReactMarker — renders a React node inside a Leaflet DivIcon
+// ReactMarker - renders a React node inside a Leaflet DivIcon
 // ---------------------------------------------------------------------------
 function ReactMarker({
   marker,
@@ -366,7 +366,7 @@ function ReactMarker({
   // Guard so deferred cleanup from StrictMode doesn't destroy a remounted root
   const aliveRef = useRef(true);
 
-  // Stable L.divIcon — never recreated; React content updates via useEffect
+  // Stable L.divIcon - never recreated; React content updates via useEffect
   const icon = React.useMemo(() => L.divIcon({
     html: elRef.current,
     className: 'sc-react-marker',
@@ -408,7 +408,7 @@ function ReactMarker({
 }
 
 // ---------------------------------------------------------------------------
-// DefaultMarker — standard Leaflet marker with optional popup and click
+// DefaultMarker - standard Leaflet marker with optional popup and click
 // ---------------------------------------------------------------------------
 function DefaultMarker({
   marker,
@@ -579,7 +579,7 @@ export default function CustomMapInner({
           <PeekOverlay markers={markers} />
         </MapContainer>
 
-        {/* Place-pin toggle button — rendered when onMapClick is provided */}
+        {/* Place-pin toggle button - rendered when onMapClick is provided */}
         {onMapClick && (
           <PlacePinButton
             onClick={onTogglePlacePin}

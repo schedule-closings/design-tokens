@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * CustomMap — Interactive map with custom markers and popups
+ * CustomMap - Interactive map with custom markers and popups
  *
  * Loads react-leaflet after mount (SSR-safe). Supports:
  *   - LocationMarkerPin as the default marker (color-coded by access type)
@@ -47,8 +47,8 @@ export interface MapMarker {
   /** Unique key for React reconciliation */
   id?: string;
 
-  // ── LocationMarkerPin data (used when no custom icon is provided) ──────
-  /** CSP / firm display name — drives default LocationMarkerPin */
+  // LocationMarkerPin data (used when no custom icon is provided)
+  /** CSP / firm display name - drives default LocationMarkerPin */
   name?: string;
   /** Access type for color coding: blue (live) or yellow (standalone) */
   accessType?: AccessType;
@@ -71,7 +71,7 @@ export interface MapMarker {
   /** Address string for the peek card */
   address?: string;
 
-  // ── Custom overrides ───────────────────────────────────────────────────
+  // Custom overrides
   /** Custom z-index offset override for this marker */
   zIndexOffset?: number;
   /** Custom React component rendered as the marker icon (overrides default pin) */
@@ -96,7 +96,7 @@ export interface CustomMapProps {
    * fallback) regardless of address pin / office state.
    */
   recenterTarget?: { lat: number; lng: number; zoom?: number };
-  /** Fires when the map's viewport changes (manual pan, zoom, programmatic recenter). Receives the new center + zoom. Use to react to "the map is now showing X area" — e.g. restoring a list when the user pans back into a supported region. */
+  /** Fires when the map's viewport changes, for example to restore a list when the user pans back into a supported region. */
   onViewportChange?: (center: { lat: number; lng: number; zoom: number }) => void;
   /** Leaflet zoom level (default 13) */
   zoom?: number;
@@ -129,7 +129,7 @@ export interface CustomMapProps {
 // ---------------------------------------------------------------------------
 
 /**
- * MapSkeleton — mimics the map layout with placeholder "roads", "blocks",
+ * MapSkeleton - mimics the map layout with placeholder "roads", "blocks",
  * zoom controls, and an attribution bar so users recognize it as a loading map.
  */
 function MapSkeleton() {
@@ -138,7 +138,7 @@ function MapSkeleton() {
       {/* Shimmer overlay */}
       <SkeletonShimmer />
 
-      {/* Fake map grid — horizontal roads */}
+      {/* Fake map grid - horizontal roads */}
       {[18, 35, 55, 78].map((top) => (
         <SkeletonHRoad key={`h-${top}`} style={{ top: `${top}%` }} />
       ))}

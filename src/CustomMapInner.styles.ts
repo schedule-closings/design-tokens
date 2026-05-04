@@ -4,7 +4,7 @@ import { styled } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 
 // ---------------------------------------------------------------------------
-// MapRoot — the outer map wrapper with rounded corners and overflow hidden
+// MapRoot - the outer map wrapper with rounded corners and overflow hidden
 // ---------------------------------------------------------------------------
 export const MapRoot = styled(Box, {
   shouldForwardProp: (prop) =>
@@ -21,7 +21,7 @@ export const MapRoot = styled(Box, {
 );
 
 // ---------------------------------------------------------------------------
-// PlacePinButton — the Leaflet-style control button for pin placement
+// PlacePinButton - the Leaflet-style control button for pin placement
 // ---------------------------------------------------------------------------
 export const PlacePinButton = styled(Box, {
   shouldForwardProp: (prop) => prop !== 'active',
