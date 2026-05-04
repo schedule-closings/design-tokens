@@ -141,6 +141,8 @@ export interface DataTableProps<T = Record<string, unknown>> {
   wrapCells?: boolean;
   defaultPageSize?: number;
   pageSizeOptions?: number[];
+  /** Hides the footer range, pagination controls, and rows-per-page selector. */
+  hideFooter?: boolean;
   onSelectionChange?: (rows: T[]) => void;
   onRowClick?: (row: T) => void;
   emptyMessage?: string;
@@ -1286,6 +1288,7 @@ export default function DataTable<T = Record<string, unknown>>({
   wrapCells = false,
   defaultPageSize = 10,
   pageSizeOptions = [10, 25, 50],
+  hideFooter = false,
   onSelectionChange,
   onRowClick,
   emptyMessage = 'No results',
@@ -2423,7 +2426,7 @@ export default function DataTable<T = Record<string, unknown>>({
         (especially in inline-variant tables where the empty-state and Add+
         trigger already read as the full UI).
       */}
-      {totalRows > 0 && (
+      {!hideFooter && totalRows > 0 && (
         <FooterBar>
           <FooterRangeText>{`${startRow}${endRow} of ${totalRows}`}</FooterRangeText>
           <PaginationNav role="navigation" aria-label="Table pagination">
