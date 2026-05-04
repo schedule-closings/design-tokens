@@ -82,6 +82,8 @@ export { default as Toggle } from './Toggle';
 export type { ToggleProps, ToggleSize, ToggleStyle } from './Toggle';
 export { default as ToggleField } from './ToggleField';
 export type { ToggleFieldProps } from './ToggleField';
+export { default as Toast } from './Toast';
+export type { ToastProps, ToastType } from './Toast';
 export { default as Tooltip } from './Tooltip';
 export type { TooltipProps } from './Tooltip';
 export { default as TruncatedText } from './TruncatedText';
