@@ -52,6 +52,8 @@ export { default as ComboField } from './ComboField';
 export type { ComboFieldProps } from './ComboField';
 export { default as ContentPanel } from './ContentPanel';
 export type { ContentPanelProps } from './ContentPanel';
+export { default as CTAFooter } from './CTAFooter';
+export type { CTAFooterContactInfo, CTAFooterFormValues, CTAFooterProps } from './CTAFooter';
 export { default as CSPCard } from './CSPCard';
 export type { CSPCardMetaItem, CSPCardProps } from './CSPCard';
 export { default as DataTable } from './DataTable';
