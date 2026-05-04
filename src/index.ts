@@ -72,6 +72,8 @@ export { default as InteractiveDotCanvas } from './InteractiveDotCanvas';
 export type { InteractiveDotCanvasProps } from './InteractiveDotCanvas';
 export { default as LocationMarkerPin, LocationPeekCard } from './LocationMarkerPin';
 export type { AccessType, LocationMarkerPinProps, LocationPeekCardProps } from './LocationMarkerPin';
+export { default as LocationSuggestionField } from './LocationSuggestionField';
+export type { LocationSuggestionFieldProps, Suggestion } from './LocationSuggestionField';
 export { default as MultiselectField } from './MultiselectField';
 export type {
   MultiselectFieldOption,
