@@ -36,6 +36,7 @@ export { LightFilledIcon } from './LightFilledIcon';
 export { LogoutIcon } from './LogoutIcon';
 export { MoonFilledIcon } from './MoonFilledIcon';
 export { PhoneIcon } from './PhoneIcon';
+export { ReleaseNotesIcon } from './ReleaseNotesIcon';
 export { ReviewIcon } from './ReviewIcon';
 export { SearchIcon } from './SearchIcon';
 export { SettingsAdjustIcon } from './SettingsAdjustIcon';
