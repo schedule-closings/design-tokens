@@ -38,6 +38,8 @@ export { default as DurationField } from './DurationField';
 export type { Duration, DurationFieldProps, DurationUnit } from './DurationField';
 export { default as ComboField } from './ComboField';
 export type { ComboFieldProps } from './ComboField';
+export { default as ContentPanel } from './ContentPanel';
+export type { ContentPanelProps } from './ContentPanel';
 export { default as DataTable } from './DataTable';
 export type { ColumnDef, DataTableProps } from './DataTable';
 export { default as FilterBar } from './FilterBar';
