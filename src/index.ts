@@ -60,8 +60,6 @@ export { default as CSPCard } from './CSPCard';
 export type { CSPCardMetaItem, CSPCardProps } from './CSPCard';
 export { default as CustomMap } from './CustomMap';
 export type { CustomMapProps, MapMarker } from './CustomMap';
-export { default as CustomMapInner } from './CustomMapInner';
-export type { CustomMapInnerProps } from './CustomMapInner';
 export { default as DataTable } from './DataTable';
 export type { ColumnDef, DataTableProps } from './DataTable';
 export { default as FilterBar } from './FilterBar';
