@@ -1,10 +1,16 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Dialog from '@mui/material/Dialog';
-import { SxProps, Theme, useTheme } from '@mui/material/styles';
-import { CloseIcon } from './icons';
+import React from "react";
+import Dialog from "@mui/material/Dialog";
+import type {
+  DialogActionsProps,
+  DialogContentProps,
+  DialogProps,
+} from "@mui/material";
+import { SxProps, Theme, useTheme } from "@mui/material/styles";
+import { CloseIcon } from "./icons";
 import {
+  getModalActionsJustifyContent,
   ModalActionsRow,
   ModalCloseButton,
   ModalContentBox,
@@ -12,23 +18,56 @@ import {
   SectionedActions,
   SectionedContent,
   SectionedHeader,
-} from './Modal.styles';
+} from "./Modal.styles";
 
-export interface ModalProps {
+export interface ModalProps extends Omit<
+  DialogProps,
+  "children" | "maxWidth" | "onClose" | "open" | "title"
+> {
   open: boolean;
   onClose: () => void;
   title?: string;
   children?: React.ReactNode;
   actions?: React.ReactNode;
-  maxWidth?: number | string;
+  maxWidth?: DialogProps["maxWidth"] | number | string;
   showCloseIcon?: boolean;
-  layout?: 'default' | 'sectioned';
+  layout?: "default" | "sectioned";
   sx?: SxProps<Theme>;
+  closeOnBackdropClick?: boolean;
+  contentProps?: DialogContentProps;
+  contentSx?: SxProps<Theme>;
+  actionsProps?: DialogActionsProps;
+  actionsSx?: SxProps<Theme>;
+  actionsPosition?: "left" | "right" | "center";
+  minHeight?: string | number;
+  dialogSx?: SxProps<Theme>;
+  disableEscapeKeyDown?: boolean;
+  fullWidth?: boolean;
+  scroll?: DialogProps["scroll"];
 }
 
 function sxArray(sx?: SxProps<Theme>): SxProps<Theme>[] {
   if (!sx) return [];
   return Array.isArray(sx) ? sx : [sx];
+}
+
+function composeSx(
+  ...sxValues: (SxProps<Theme> | undefined)[]
+): SxProps<Theme> {
+  return sxValues.flatMap((sxValue) => sxArray(sxValue)) as SxProps<Theme>;
+}
+
+function isDialogMaxWidth(
+  maxWidth: ModalProps["maxWidth"],
+): maxWidth is DialogProps["maxWidth"] {
+  return (
+    maxWidth === false ||
+    maxWidth === "xs" ||
+    maxWidth === "sm" ||
+    maxWidth === "md" ||
+    maxWidth === "lg" ||
+    maxWidth === "xl"
+  );
 }
 
 function CloseButton({ onClose }: { onClose: () => void }) {
@@ -45,8 +84,29 @@ function TitleRow({ title }: { title: string }) {
   return <ModalTitleText>{title}</ModalTitleText>;
 }
 
-function ActionsRow({ actions }: { actions: React.ReactNode }) {
-  return <ModalActionsRow>{actions}</ModalActionsRow>;
+function ActionsRow({
+  actions,
+  actionsPosition,
+  sx,
+}: {
+  actions: React.ReactNode;
+  actionsPosition: "left" | "right" | "center";
+  sx?: SxProps<Theme>;
+}) {
+  return (
+    <ModalActionsRow
+      sx={
+        [
+          {
+            justifyContent: getModalActionsJustifyContent(actionsPosition),
+          },
+          ...sxArray(sx),
+        ] as SxProps<Theme>
+      }
+    >
+      {actions}
+    </ModalActionsRow>
+  );
 }
 
 export default function Modal({
@@ -57,10 +117,24 @@ export default function Modal({
   actions,
   maxWidth = 480,
   showCloseIcon = true,
-  layout = 'default',
+  layout = "default",
   sx,
+  closeOnBackdropClick = false,
+  contentProps,
+  contentSx,
+  actionsProps,
+  actionsSx,
+  actionsPosition = "right",
+  minHeight,
+  dialogSx,
+  disableEscapeKeyDown,
+  scroll,
+  fullWidth,
+  ...dialogProps
 }: ModalProps) {
   const theme = useTheme();
+  const dialogMaxWidth = isDialogMaxWidth(maxWidth) ? maxWidth : false;
+  const paperMaxWidth = isDialogMaxWidth(maxWidth) ? undefined : maxWidth;
 
   const micaDarkOverrides = {
     '[data-color-mode="dark"] &': {
@@ -76,13 +150,14 @@ export default function Modal({
   };
 
   const defaultPaperSx: SxProps<Theme> = {
-    position: 'relative',
-    borderRadius: theme.customBorderRadius['3xl'],
+    position: "relative",
+    borderRadius: theme.customBorderRadius["3xl"],
     p: { xs: theme.customSpacing[6], md: theme.customSpacing[8] },
     m: theme.customSpacing[4],
-    '@media (min-width: 750px)': { m: theme.customSpacing[12] },
-    maxWidth,
-    width: '100%',
+    "@media (min-width: 750px)": { m: theme.customSpacing[12] },
+    maxWidth: paperMaxWidth,
+    minHeight,
+    width: "100%",
     bgcolor: theme.semantic.common.white,
     backgroundImage: theme.surfaceOverlay.high,
     boxShadow: theme.customShadows.modal,
@@ -90,45 +165,67 @@ export default function Modal({
   };
 
   const sectionedPaperSx: SxProps<Theme> = {
-    position: 'relative',
-    borderRadius: theme.customBorderRadius['3xl'],
+    position: "relative",
+    borderRadius: theme.customBorderRadius["3xl"],
     m: theme.customSpacing[4],
-    '@media (min-width: 750px)': { m: theme.customSpacing[12] },
-    maxWidth,
-    width: '100%',
-    maxHeight: '85vh',
+    "@media (min-width: 750px)": { m: theme.customSpacing[12] },
+    maxWidth: paperMaxWidth,
+    minHeight,
+    width: "100%",
+    maxHeight: "85vh",
     bgcolor: theme.semantic.common.white,
     backgroundImage: theme.surfaceOverlay.high,
     boxShadow: theme.customShadows.modal,
-    display: 'flex',
-    flexDirection: 'column',
-    overflow: 'hidden',
-    '@media (max-width: 749px)': {
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+    "@media (max-width: 749px)": {
       m: 0,
       borderRadius: 0,
-      maxWidth: '100%',
-      width: '100%',
-      height: '100%',
-      maxHeight: '100%',
+      maxWidth: "100%",
+      width: "100%",
+      height: "100%",
+      maxHeight: "100%",
     },
     ...micaDarkOverrides,
   };
 
-  if (layout === 'default') {
+  const handleClose: DialogProps["onClose"] = (_, reason) => {
+    if (!closeOnBackdropClick && reason === "backdropClick") return;
+    if (disableEscapeKeyDown && reason === "escapeKeyDown") return;
+    onClose();
+  };
+
+  if (layout === "default") {
     return (
       <Dialog
+        {...dialogProps}
         open={open}
-        onClose={onClose}
+        onClose={handleClose}
+        disableEscapeKeyDown={disableEscapeKeyDown}
+        scroll={scroll}
+        fullWidth={fullWidth}
+        maxWidth={dialogMaxWidth}
+        sx={dialogSx}
         slotProps={{
           backdrop: { sx: backdropSx },
         }}
         PaperProps={{ sx: [defaultPaperSx, ...sxArray(sx)] as SxProps<Theme> }}
       >
         {showCloseIcon && <CloseButton onClose={onClose} />}
-        <ModalContentBox>
+        <ModalContentBox
+          {...contentProps}
+          sx={composeSx(contentSx, contentProps?.sx)}
+        >
           {title && <TitleRow title={title} />}
           {children}
-          {actions && <ActionsRow actions={actions} />}
+          {actions && (
+            <ActionsRow
+              actions={actions}
+              actionsPosition={actionsPosition}
+              sx={composeSx(actionsSx, actionsProps?.sx)}
+            />
+          )}
         </ModalContentBox>
       </Dialog>
     );
@@ -136,9 +233,21 @@ export default function Modal({
 
   return (
     <Dialog
+      {...dialogProps}
       open={open}
-      onClose={onClose}
-      sx={{ '@media (max-width: 749px)': { '& .MuiDialog-container': { alignItems: 'stretch' } } }}
+      onClose={handleClose}
+      disableEscapeKeyDown={disableEscapeKeyDown}
+      scroll={scroll}
+      fullWidth={fullWidth}
+      maxWidth={dialogMaxWidth}
+      sx={composeSx(
+        {
+          "@media (max-width: 749px)": {
+            "& .MuiDialog-container": { alignItems: "stretch" },
+          },
+        },
+        dialogSx,
+      )}
       slotProps={{
         backdrop: { sx: backdropSx },
       }}
@@ -149,11 +258,19 @@ export default function Modal({
         {title && <TitleRow title={title} />}
       </SectionedHeader>
 
-      <SectionedContent>{children}</SectionedContent>
+      <SectionedContent
+        {...contentProps}
+        sx={composeSx(contentSx, contentProps?.sx)}
+      >
+        {children}
+      </SectionedContent>
 
       {actions && (
-        <SectionedActions>
-          <ActionsRow actions={actions} />
+        <SectionedActions
+          {...actionsProps}
+          sx={composeSx(actionsSx, actionsProps?.sx)}
+        >
+          <ActionsRow actions={actions} actionsPosition={actionsPosition} />
         </SectionedActions>
       )}
     </Dialog>
