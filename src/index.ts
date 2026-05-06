@@ -81,7 +81,13 @@ export type { LocationSuggestionFieldProps, Suggestion } from './LocationSuggest
 export { default as LoggedOutHeader } from './LoggedOutHeader';
 export type { LoggedOutHeaderBreakpoint, LoggedOutHeaderProps } from './LoggedOutHeader';
 export { default as LoggedInHeader } from './LoggedInHeader';
-export type { LoggedInHeaderBreakpoint, LoggedInHeaderProfileType, LoggedInHeaderProps } from './LoggedInHeader';
+export type {
+  LoggedInHeaderBreakpoint,
+  LoggedInHeaderNavItem,
+  LoggedInHeaderProfileMenuItem,
+  LoggedInHeaderProfileType,
+  LoggedInHeaderProps,
+} from './LoggedInHeader';
 export { default as MultiselectField } from './MultiselectField';
 export type {
   MultiselectFieldOption,
