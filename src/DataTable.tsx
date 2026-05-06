@@ -71,9 +71,68 @@ import VerifiedIcon from '@mui/icons-material/Verified';
 
 // Public interfaces
 
+export type DataTableSortDirection = 'asc' | 'desc' | null;
+
+export interface DataTableSortState {
+  field: string | null;
+  direction: DataTableSortDirection;
+}
+
+export interface DataTablePaginationConfig {
+  page: number;
+  totalPages: number;
+  total: number;
+  pageSize: number;
+  onPageChange: (page: number, pageSize: number) => void;
+}
+
+export interface DataTableSearchConfig {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}
+
+export interface DataTableExternalSortingConfig {
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  onSortChange: (sortBy: string, sortOrder: 'asc' | 'desc') => void;
+}
+
+export interface DataTableRowAction<T = Record<string, unknown>> {
+  id: string;
+  label: string;
+  icon: React.ReactElement;
+  onClick: (row: T) => void;
+  disabled?: boolean | ((row: T) => boolean);
+  hidden?: boolean | ((row: T) => boolean);
+  color?: string;
+}
+
+export interface DataTableRowDragEvent<T = Record<string, unknown>> {
+  row: T;
+  rowIndex: number;
+  absoluteIndex: number;
+  event: React.DragEvent<HTMLTableRowElement>;
+}
+
+export interface DataTableRowDropEvent<T = Record<string, unknown>>
+  extends DataTableRowDragEvent<T> {
+  sourceRow: T;
+  sourceIndex: number;
+  sourceAbsoluteIndex: number;
+}
+
+export type DataTableRowProps<T = Record<string, unknown>> =
+  React.HTMLAttributes<HTMLTableRowElement> | ((row: T, rowIndex: number) => React.HTMLAttributes<HTMLTableRowElement>);
+
+export type DataTableHeaderProps<T = Record<string, unknown>> =
+  React.ThHTMLAttributes<HTMLTableCellElement> | ((column: ColumnDef<T>, columnIndex: number) => React.ThHTMLAttributes<HTMLTableCellElement>);
+
 export interface ColumnDef<T = Record<string, unknown>> {
   id: string;
-  header: string;
+  header: React.ReactNode;
+  /** Plain-text label used by column visibility, sorting announcements, and aria labels when `header` is not a string. */
+  headerLabel?: string;
   /**
    * Optional helper description shown in a HelpFilledIcon tooltip to the
    * right of the header label. The icon has `flex-shrink: 0` so it stays
@@ -87,7 +146,11 @@ export interface ColumnDef<T = Record<string, unknown>> {
   defaultVisible?: boolean;
   align?: 'left' | 'center' | 'right';
   accessor?: ((row: T) => unknown) | string;
-  cell?: (value: unknown, row: T) => React.ReactNode;
+  cell?: (value: unknown, row: T, column: ColumnDef<T>, rowIndex: number) => React.ReactNode;
+  headerCell?: (column: ColumnDef<T>) => React.ReactNode;
+  footer?: React.ReactNode | ((column: ColumnDef<T>) => React.ReactNode);
+  getCellProps?: (row: T, rowIndex: number, value: unknown) => React.TdHTMLAttributes<HTMLTableCellElement>;
+  getHeaderProps?: (column: ColumnDef<T>, columnIndex: number) => React.ThHTMLAttributes<HTMLTableCellElement>;
 }
 
 export interface DataTableProps<T = Record<string, unknown>> {
@@ -98,6 +161,8 @@ export interface DataTableProps<T = Record<string, unknown>> {
   selectable?: boolean;
   /** Hides the toolbar (search + selection + settings). Useful when the table lives inside a modal with its own header and doesn't need table-level tools. */
   hideToolbar?: boolean;
+  showSearch?: boolean;
+  showColumnVisibility?: boolean;
   /** Position of the `actionCell` column. Defaults to 'right'. Users can still toggle via the toolbar's actions-position select (unless `hideToolbar`). */
   actionsColumnPosition?: 'left' | 'right';
   /**
@@ -141,14 +206,28 @@ export interface DataTableProps<T = Record<string, unknown>> {
   wrapCells?: boolean;
   defaultPageSize?: number;
   pageSizeOptions?: number[];
+  pagination?: DataTablePaginationConfig;
+  showPagination?: boolean;
   /** Hides the footer range, pagination controls, and rows-per-page selector. */
   hideFooter?: boolean;
+  search?: DataTableSearchConfig;
+  sort?: DataTableSortState;
+  onSortChange?: (sort: DataTableSortState) => void;
+  externalSorting?: DataTableExternalSortingConfig;
   onSelectionChange?: (rows: T[]) => void;
+  onRowSelectionChange?: (rows: T[]) => void;
   onRowClick?: (row: T) => void;
+  getRowId?: (row: T, index: number) => string;
+  selectedRowId?: string | null;
+  getRowProps?: DataTableRowProps<T>;
+  getHeaderProps?: DataTableHeaderProps<T>;
   emptyMessage?: string;
+  noDataMessage?: string;
   loading?: boolean;
+  isLoading?: boolean;
   searchPlaceholder?: string;
   actionCell?: ((row: T) => React.ReactNode) | null;
+  rowActions?: DataTableRowAction<T>[];
   /**
    * Describes how rows in this table are edited. Primarily used to pick
    * sensible defaults for the Actions column and other affordances.
@@ -173,6 +252,18 @@ export interface DataTableProps<T = Record<string, unknown>> {
    * Escape hatch for tables that don't have any row-level actions.
    */
   hideActionsColumn?: boolean;
+  stickyActionsColumn?: boolean;
+  stickyFirstColumn?: boolean;
+  tableId?: string;
+  tableContainerSx?: SxProps<Theme>;
+  TableFooterComponent?: React.ReactNode;
+  SearchActionComponent?: React.ReactNode;
+  draggableRows?: boolean;
+  onRowDragStart?: (event: DataTableRowDragEvent<T>) => void;
+  onRowDragOver?: (event: DataTableRowDragEvent<T>) => void;
+  onRowDrop?: (event: DataTableRowDropEvent<T>) => void;
+  onRowDragEnd?: (event: DataTableRowDragEvent<T>) => void;
+  onRowReorder?: (sourceIndex: number, targetIndex: number, sourceRow: T, targetRow: T) => void;
   sx?: SxProps<Theme>;
 }
 
@@ -210,6 +301,22 @@ function makeR(theme: Theme) {
 
 function makeFocusRing(theme: Theme) {
   return `0 0 0 2px ${theme.semantic.primary.focusVisible}`;
+}
+
+function getColumnHeaderText<T>(col: ColumnDef<T>): string {
+  if (col.headerLabel) return col.headerLabel;
+  return typeof col.header === 'string' ? col.header : col.id;
+}
+
+function resolveBoolean<T>(value: boolean | ((row: T) => boolean) | undefined, row: T): boolean {
+  return typeof value === 'function' ? value(row) : value === true;
+}
+
+function mergeStyle(
+  base: React.CSSProperties,
+  extra?: React.CSSProperties,
+): React.CSSProperties {
+  return extra ? { ...base, ...extra } : base;
 }
 
 // Helper: getInitials
@@ -652,7 +759,7 @@ function ColumnVisibilityMenu({ columns, visibleColumns, onSave }: ColumnVisibil
 
   // Filter by search query
   const filtered = toggleable.filter((c) =>
-    c.header.toLowerCase().includes(searchQuery.toLowerCase())
+    getColumnHeaderText(c).toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Apply staged changes to parent and close
@@ -742,7 +849,7 @@ function ColumnVisibilityMenu({ columns, visibleColumns, onSave }: ColumnVisibil
                   <Checkbox
                     key={col.id}
                     checked={on}
-                    label={col.header}
+                    label={getColumnHeaderText(col)}
                     onChange={() => {
                       setStagedVisible((prev) => {
                         const next = new Set(prev);
@@ -1218,7 +1325,8 @@ interface ActionIconButtonProps {
   /** The icon element to render */
   icon: React.ReactElement;
   /** Click handler */
-  onClick?: () => void;
+  onClick?: React.MouseEventHandler<HTMLDivElement>;
+  disabled?: boolean;
   /** Icon size (default 18) */
   size?: number;
   /** Icon color (default semantic.text.secondary) */
@@ -1229,6 +1337,7 @@ function ActionIconButton({
   label,
   icon,
   onClick,
+  disabled = false,
   size = 18,
   color,
 }: ActionIconButtonProps) {
@@ -1238,8 +1347,13 @@ function ActionIconButton({
   return (
     <ActionIconButtonRoot
       component="button"
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
       aria-label={label}
+      aria-disabled={disabled || undefined}
+      sx={{
+        opacity: disabled ? 0.45 : undefined,
+        pointerEvents: disabled ? 'none' : undefined,
+      }}
     >
       <IconTooltip
         title={label}
@@ -1280,6 +1394,8 @@ export default function DataTable<T = Record<string, unknown>>({
   searchable = true,
   selectable = false,
   hideToolbar = false,
+  showSearch,
+  showColumnVisibility = true,
   actionsColumnPosition = 'right',
   inlineAddVariant = 'footer',
   inlineAddRow,
@@ -1288,15 +1404,41 @@ export default function DataTable<T = Record<string, unknown>>({
   wrapCells = false,
   defaultPageSize = 10,
   pageSizeOptions = [10, 25, 50],
+  pagination,
+  showPagination = true,
   hideFooter = false,
+  search: controlledSearch,
+  sort: controlledSort,
+  onSortChange,
+  externalSorting,
   onSelectionChange,
+  onRowSelectionChange,
   onRowClick,
+  getRowId,
+  selectedRowId,
+  getRowProps,
+  getHeaderProps,
   emptyMessage = 'No results',
+  noDataMessage,
   loading = false,
+  isLoading,
   searchPlaceholder = 'Search',
   actionCell = null,
+  rowActions,
   editMode,
   hideActionsColumn,
+  stickyActionsColumn = true,
+  stickyFirstColumn = false,
+  tableId: tableIdProp,
+  tableContainerSx,
+  TableFooterComponent,
+  SearchActionComponent,
+  draggableRows = false,
+  onRowDragStart,
+  onRowDragOver,
+  onRowDrop,
+  onRowDragEnd,
+  onRowReorder,
   sx = {},
 }: DataTableProps<T>) {
   //  Theme 
@@ -1311,10 +1453,21 @@ export default function DataTable<T = Record<string, unknown>>({
   // is the explicit escape hatch. When either is true, every header/body
   // block below treats `actionPosition` as 'none' so no Actions column
   // is rendered.
-  const showActionsColumn = !(hideActionsColumn || editMode === 'always-editable');
+  const showActionsColumn =
+    !(hideActionsColumn || editMode === 'always-editable') &&
+    (actionCell != null || (rowActions?.length ?? 0) > 0);
 
   //  Unique id for this table instance 
-  const tableId = useId();
+  const generatedTableId = useId();
+  const tableId = tableIdProp ?? generatedTableId;
+  const resolvedLoading = isLoading ?? loading;
+  const resolvedEmptyMessage = noDataMessage ?? emptyMessage;
+  const resolvedSearchable = showSearch ?? searchable;
+  const usesServerPagination = pagination != null;
+  const usesControlledSearch = controlledSearch != null;
+  const controlledSortState = externalSorting
+    ? { field: externalSorting.sortBy ?? null, direction: externalSorting.sortOrder ?? null }
+    : controlledSort;
 
   //  Aria live region 
   const liveRef = useRef<HTMLDivElement>(null);
@@ -1328,13 +1481,17 @@ export default function DataTable<T = Record<string, unknown>>({
   }, []);
 
   //  Core state 
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(defaultPageSize);
-  const [sort, setSort] = useState<{ field: string | null; direction: 'asc' | 'desc' | null }>({
+  const [internalSearch, setInternalSearch] = useState('');
+  const [internalPage, setInternalPage] = useState(1);
+  const [internalPageSize, setInternalPageSize] = useState(defaultPageSize);
+  const [internalSort, setInternalSort] = useState<DataTableSortState>({
     field: null,
     direction: null,
   });
+  const search = controlledSearch?.value ?? internalSearch;
+  const page = pagination?.page ?? internalPage;
+  const pageSize = pagination?.pageSize ?? internalPageSize;
+  const sort = controlledSortState ?? internalSort;
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
     () => new Set(columns.filter((c) => c.defaultVisible !== false).map((c) => c.id))
   );
@@ -1356,6 +1513,7 @@ export default function DataTable<T = Record<string, unknown>>({
   const [selectedRows, setSelectedRows] = useState<Set<unknown>>(new Set());
   const [actionPosition, setActionPosition] = useState<'left' | 'right'>(actionsColumnPosition);
   const [rowDensity, setRowDensity] = useState<'compact' | 'comfortable' | 'spacious'>('spacious');
+  const [draggedRow, setDraggedRow] = useState<{ row: T; rowIndex: number; absoluteIndex: number } | null>(null);
 
   // Row density padding map  header row is fixed, only data rows change
   const cellPy = rowDensity === 'compact' ? '4px' : rowDensity === 'comfortable' ? '10px' : '16px';
@@ -1381,6 +1539,7 @@ export default function DataTable<T = Record<string, unknown>>({
 
   //  Derived: filtered 
   const filtered = useMemo(() => {
+    if (usesControlledSearch || usesServerPagination) return data;
     const q = search.trim().toLowerCase();
     if (!q) return data;
     return data.filter((row) =>
@@ -1391,10 +1550,11 @@ export default function DataTable<T = Record<string, unknown>>({
         return str.toLowerCase().includes(q);
       })
     );
-  }, [data, search, columns, getValue]);
+  }, [data, search, columns, getValue, usesControlledSearch, usesServerPagination]);
 
   //  Derived: sorted 
   const sorted = useMemo(() => {
+    if (controlledSortState || usesServerPagination) return filtered;
     if (!sort.field || !sort.direction) return filtered;
     const col = columns.find((c) => c.id === sort.field);
     return [...filtered].sort((a, b) => {
@@ -1405,33 +1565,128 @@ export default function DataTable<T = Record<string, unknown>>({
       const cmp = as.localeCompare(bs, undefined, { numeric: true });
       return sort.direction === 'asc' ? cmp : -cmp;
     });
-  }, [filtered, sort, columns, getValue]);
+  }, [filtered, sort, columns, getValue, controlledSortState, usesServerPagination]);
 
   //  Derived: pagination 
-  const totalRows = sorted.length;
-  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+  const totalRows = pagination?.total ?? sorted.length;
+  const totalPages = Math.max(1, pagination?.totalPages ?? Math.ceil(totalRows / pageSize));
   const safePage = Math.min(page, totalPages);
-  const pageRows = sorted.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const pageRows = usesServerPagination ? sorted : sorted.slice((safePage - 1) * pageSize, safePage * pageSize);
   const startRow = totalRows === 0 ? 0 : (safePage - 1) * pageSize + 1;
   const endRow = Math.min(safePage * pageSize, totalRows);
 
+  const setPage = useCallback(
+    (nextPage: number | ((page: number) => number)) => {
+      const resolvedPage = typeof nextPage === 'function' ? nextPage(safePage) : nextPage;
+      if (pagination) pagination.onPageChange(resolvedPage, pageSize);
+      else setInternalPage(resolvedPage);
+    },
+    [pagination, pageSize, safePage],
+  );
+
+  const setPageSize = useCallback(
+    (nextPageSize: number) => {
+      if (pagination) pagination.onPageChange(1, nextPageSize);
+      else {
+        setInternalPageSize(nextPageSize);
+        setInternalPage(1);
+      }
+    },
+    [pagination],
+  );
+
+  const setSearch = useCallback(
+    (nextSearch: string) => {
+      if (controlledSearch) controlledSearch.onChange(nextSearch);
+      else setInternalSearch(nextSearch);
+    },
+    [controlledSearch],
+  );
+
+  const setSort = useCallback(
+    (updater: DataTableSortState | ((prev: DataTableSortState) => DataTableSortState)) => {
+      const next = typeof updater === 'function' ? updater(sort) : updater;
+      if (externalSorting) {
+        if (next.field && next.direction) externalSorting.onSortChange(next.field, next.direction);
+      } else if (onSortChange) {
+        onSortChange(next);
+      } else {
+        setInternalSort(next);
+      }
+    },
+    [externalSorting, onSortChange, sort],
+  );
+
+  const resolveRowProps = useCallback(
+    (row: T, rowIndex: number): React.HTMLAttributes<HTMLTableRowElement> => {
+      if (!getRowProps) return {};
+      return typeof getRowProps === 'function' ? getRowProps(row, rowIndex) : getRowProps;
+    },
+    [getRowProps],
+  );
+
+  const resolveHeaderProps = useCallback(
+    (column: ColumnDef<T>, columnIndex: number): React.ThHTMLAttributes<HTMLTableCellElement> => {
+      const tableProps = !getHeaderProps
+        ? {}
+        : typeof getHeaderProps === 'function'
+          ? getHeaderProps(column, columnIndex)
+          : getHeaderProps;
+      const columnProps = column.getHeaderProps?.(column, columnIndex) ?? {};
+      return { ...tableProps, ...columnProps };
+    },
+    [getHeaderProps],
+  );
+
+  const renderActionContent = useCallback(
+    (row: T) => {
+      const custom = actionCell?.(row);
+      const visibleActions = (rowActions ?? []).filter((action) => !resolveBoolean(action.hidden, row));
+      if (!custom && visibleActions.length === 0) return null;
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+          {custom}
+          {visibleActions.map((action) => {
+            const disabled = resolveBoolean(action.disabled, row);
+            return (
+              <ActionIconButton
+                key={action.id}
+                icon={action.icon}
+                label={action.label}
+                disabled={disabled}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (!disabled) action.onClick(row);
+                }}
+                color={action.color}
+              />
+            );
+          })}
+        </div>
+      );
+    },
+    [actionCell, rowActions],
+  );
+
   // Reset page on search/pageSize change
   useEffect(() => {
-    setPage(1);
-  }, [search, pageSize]);
+    if (!pagination) setInternalPage(1);
+  }, [search, pageSize, pagination]);
+
+  //  Row key helper
+  const rowKey = useCallback(
+    (row: T, i: number): string =>
+      getRowId?.(row, i) ??
+      String((row as Record<string, unknown>).id ?? (row as Record<string, unknown>)._id ?? i),
+    [getRowId],
+  );
 
   // Notify parent on selection change
   useEffect(() => {
-    if (onSelectionChange) {
-      onSelectionChange(
-        data.filter((r, i) =>
-          selectedRows.has(
-            (r as Record<string, unknown>).id ?? (r as Record<string, unknown>)._id ?? i
-          )
-        )
-      );
-    }
-  }, [selectedRows]); // eslint-disable-line react-hooks/exhaustive-deps
+    const handler = onSelectionChange ?? onRowSelectionChange;
+    if (!handler) return;
+    handler(data.filter((r, i) => selectedRows.has(rowKey(r, i))));
+  }, [data, onRowSelectionChange, onSelectionChange, rowKey, selectedRows]);
 
   //  Derived: orderedCols 
   const orderedCols = useMemo(() => {
@@ -1459,23 +1714,29 @@ export default function DataTable<T = Record<string, unknown>>({
   const handleSort = useCallback(
     (colId: string) => {
       let msg = '';
-      setSort((prev) => {
-        const dir: 'asc' | 'desc' | null =
-          prev.field !== colId
-            ? 'asc'
-            : prev.direction === 'asc'
-              ? 'desc'
-              : prev.direction === 'desc'
-                ? null
-                : 'asc';
-        msg = dir ? `Sorted ${dir === 'asc' ? 'ascending' : 'descending'}` : 'Sort cleared';
-        return { field: dir ? colId : null, direction: dir };
-      });
+      const dir: DataTableSortDirection =
+        sort.field !== colId
+          ? 'asc'
+          : sort.direction === 'asc'
+            ? 'desc'
+            : sort.direction === 'desc'
+              ? null
+              : 'asc';
+      const next = { field: dir ? colId : null, direction: dir };
+      msg = dir ? `Sorted ${dir === 'asc' ? 'ascending' : 'descending'}` : 'Sort cleared';
+
+      if (externalSorting) {
+        if (dir) externalSorting.onSortChange(colId, dir);
+      } else if (onSortChange) {
+        onSortChange(next);
+      } else if (!controlledSort) {
+        setInternalSort(next);
+      }
       // announce after state update to avoid firing twice in Strict Mode
       setTimeout(() => announce(msg), 0);
       setPage(1);
     },
-    [announce]
+    [announce, controlledSort, externalSorting, onSortChange, setPage, sort]
   );
 
   const handleResize = useCallback(
@@ -1547,10 +1808,6 @@ export default function DataTable<T = Record<string, unknown>>({
     setDropIndex(null);
   }, []);
 
-  //  Row key helper 
-  const rowKey = (row: T, i: number): unknown =>
-    (row as Record<string, unknown>).id ?? (row as Record<string, unknown>)._id ?? i;
-
   //  Selection state 
   const allPageSel =
     pageRows.length > 0 &&
@@ -1608,6 +1865,43 @@ export default function DataTable<T = Record<string, unknown>>({
     };
   }, [orderedCols, colWidths, pageRows.length]);
 
+  const hasLeftActionsColumn = showActionsColumn && actionPosition === 'left';
+  const hasRightActionsColumn = showActionsColumn && actionPosition === 'right';
+  const stickyFirstColId = stickyFirstColumn ? orderedCols[0]?.id : undefined;
+  const firstColumnLeft = (selectable ? 48 : 0) + (hasLeftActionsColumn ? 48 : 0);
+  const totalColumnCount =
+    orderedCols.length + (selectable ? 1 : 0) + (showActionsColumn ? 1 : 0);
+  const hasColumnFooter = orderedCols.some((col) => col.footer != null);
+
+  const renderRowActions = useCallback(
+    (row: T) => {
+      if (actionCell) return actionCell(row);
+      if (!rowActions?.length) return null;
+
+      return rowActions
+        .filter((action) => !resolveBoolean(action.hidden, row))
+        .map((action) => {
+          const disabled = resolveBoolean(action.disabled, row);
+          return (
+            <ActionIconButton
+              key={action.id}
+              label={action.label}
+              icon={action.icon}
+              color={action.color}
+              onClick={
+                disabled
+                  ? undefined
+                  : () => {
+                      action.onClick(row);
+                    }
+              }
+            />
+          );
+        });
+    },
+    [actionCell, rowActions],
+  );
+
   //  Render 
   return (
     <DataTableRoot
@@ -1632,15 +1926,16 @@ export default function DataTable<T = Record<string, unknown>>({
       {/*  Toolbar  */}
       {!hideToolbar && (
         <Toolbar>
-          {searchable && (
+          {resolvedSearchable && (
             <TextInputField
-              placeholder={searchPlaceholder}
+              placeholder={controlledSearch?.placeholder ?? searchPlaceholder}
               value={search}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
               startIcon={<SearchIcon size={16} />}
               sx={{ width: 220, '& > div:last-of-type': { bgcolor: 'transparent', py: 0, height: theme.inputHeights.base, boxSizing: 'border-box' } }}
             />
           )}
+          {SearchActionComponent}
           {selectable && selectedRows.size > 0 && (
             <SelectionToggle
               selectedCount={selectedRows.size}
@@ -1678,11 +1973,13 @@ export default function DataTable<T = Record<string, unknown>>({
               { value: 'spacious', label: 'Spacious' },
             ]}
           />
-          <ColumnVisibilityMenu
-            columns={columns as ColumnDef[]}
-            visibleColumns={visibleColumns}
-            onSave={(next) => setVisibleColumns(next)}
-          />
+          {showColumnVisibility && (
+            <ColumnVisibilityMenu
+              columns={columns as ColumnDef[]}
+              visibleColumns={visibleColumns}
+              onSave={(next) => setVisibleColumns(next)}
+            />
+          )}
         </Toolbar>
       )}
 
@@ -1698,6 +1995,7 @@ export default function DataTable<T = Record<string, unknown>>({
         <ScrollContainerInner
           ref={scrollRef}
           data-has-right-overflow={hasRight ? 'true' : undefined}
+          sx={tableContainerSx}
         >
           {orderedCols.length === 0 ? (
             <EmptyStateContainer>
@@ -1744,6 +2042,7 @@ export default function DataTable<T = Record<string, unknown>>({
             </EmptyStateContainer>
           ) : (
           <table
+            id={tableId}
             role="grid"
             aria-label={title ?? 'Data table'}
             style={{
@@ -1833,15 +2132,15 @@ export default function DataTable<T = Record<string, unknown>>({
                       width: 0,
                       whiteSpace: 'nowrap',
                       padding: `${headerPy} ${cellPx}`,
-                      position: 'sticky',
+                      position: stickyActionsColumn ? 'sticky' : undefined,
                       top: 0,
-                      left: selectable ? 48 : 0,
+                      left: stickyActionsColumn ? (selectable ? 48 : 0) : undefined,
                       zIndex: 3,
                       backgroundColor: T.stickyStripe,
                       borderRight: `1px solid ${T.border}`,
                       borderBottom: `1px solid ${T.border}`,
                       textAlign: 'center',
-                      boxShadow: hasLeft ? '6px 0 12px var(--sc-dt-sticky-shadow)' : 'none',
+                      boxShadow: stickyActionsColumn && hasLeft ? '6px 0 12px var(--sc-dt-sticky-shadow)' : 'none',
                     }}
                   >
                     <span
@@ -1871,8 +2170,24 @@ export default function DataTable<T = Record<string, unknown>>({
                   const isFlex = col.id === flexColId;
                   const pinnedWidth = colWidths[col.id] ?? col.width;
                   const effectiveMinWidth = col.minWidth ?? 50;
+                  const localHeaderProps =
+                    typeof getHeaderProps === 'function'
+                      ? getHeaderProps(col, colIdx)
+                      : getHeaderProps;
+                  const columnHeaderProps = col.getHeaderProps?.(col, colIdx);
+                  const mergedHeaderProps = {
+                    ...localHeaderProps,
+                    ...columnHeaderProps,
+                    style: mergeStyle(
+                      mergeStyle(
+                        (localHeaderProps?.style ?? {}) as React.CSSProperties,
+                        columnHeaderProps?.style,
+                      ),
+                    ),
+                  };
                   return (
                   <th
+                    {...mergedHeaderProps}
                     key={col.id}
                     scope="col"
                     draggable={true}
@@ -1887,15 +2202,20 @@ export default function DataTable<T = Record<string, unknown>>({
                           : 'descending'
                         : 'none'
                     }
-                    style={{
+                    style={mergeStyle({
                       padding: `${headerPy} 8px ${headerPy} ${cellPx}`,
-                      position: 'sticky',
+                      position: stickyFirstColId === col.id ? 'sticky' : 'sticky',
                       top: 0,
-                      zIndex: 1,
+                      left: stickyFirstColId === col.id ? firstColumnLeft : undefined,
+                      zIndex: stickyFirstColId === col.id ? 3 : 1,
                       backgroundColor: dragActiveColId === col.id ? `${T.primary}0d` : T.stickyStripe,
                       borderRight:
                         dropIndex === colIdx ? `2px solid ${T.primary}` : `1px solid ${T.border}`,
                       borderBottom: `1px solid ${T.border}`,
+                      boxShadow:
+                        stickyFirstColId === col.id && hasLeft
+                          ? '6px 0 12px var(--sc-dt-sticky-shadow)'
+                          : undefined,
                       cursor: 'grab',
                       userSelect: 'none',
                       whiteSpace: 'nowrap',
@@ -1904,7 +2224,7 @@ export default function DataTable<T = Record<string, unknown>>({
                       minWidth:
                         !isFlex && pinnedWidth != null ? pinnedWidth : effectiveMinWidth,
                       maxWidth: !isFlex && pinnedWidth != null ? pinnedWidth : undefined,
-                    }}
+                    }, mergedHeaderProps.style)}
                   >
                     <HeaderCellInner>
                       <DragIndicatorIcon
@@ -1916,6 +2236,9 @@ export default function DataTable<T = Record<string, unknown>>({
                           component="button"
                           onClick={() => handleSort(col.id)}
                         >
+                          {col.headerCell ? (
+                            col.headerCell(col)
+                          ) : (
                           <HeaderLabelSpan>
                             <span
                               style={{
@@ -1927,6 +2250,7 @@ export default function DataTable<T = Record<string, unknown>>({
                               {col.header}
                             </span>
                           </HeaderLabelSpan>
+                          )}
                           {col.description != null && (
                             // Wrapper stops clicks from bubbling into the
                             // sort button so users can hover the help icon
@@ -1947,6 +2271,9 @@ export default function DataTable<T = Record<string, unknown>>({
                         </SortableHeaderButton>
                       ) : (
                         <>
+                          {col.headerCell ? (
+                            col.headerCell(col)
+                          ) : (
                           <HeaderLabelSpan>
                             <span
                               style={{
@@ -1958,6 +2285,7 @@ export default function DataTable<T = Record<string, unknown>>({
                               {col.header}
                             </span>
                           </HeaderLabelSpan>
+                          )}
                           {col.description != null && (
                             <IconTooltip
                               title={col.description}
@@ -1985,14 +2313,14 @@ export default function DataTable<T = Record<string, unknown>>({
                       width: 0,
                       whiteSpace: 'nowrap',
                       padding: `${headerPy} ${cellPx}`,
-                      position: 'sticky',
+                      position: stickyActionsColumn ? 'sticky' : undefined,
                       top: 0,
-                      right: 0,
+                      right: stickyActionsColumn ? 0 : undefined,
                       zIndex: 3,
                       backgroundColor: T.stickyStripe,
                       borderBottom: `1px solid ${T.border}`,
                       textAlign: 'center',
-                      boxShadow: hasRight ? '-6px 0 12px var(--sc-dt-sticky-shadow)' : 'none',
+                      boxShadow: stickyActionsColumn && hasRight ? '-6px 0 12px var(--sc-dt-sticky-shadow)' : 'none',
                     }}
                   >
                     <span
@@ -2013,7 +2341,7 @@ export default function DataTable<T = Record<string, unknown>>({
 
             {/*  tbody  */}
             <tbody>
-              {loading ? (
+              {resolvedLoading ? (
                 Array.from({ length: pageSize }).map((_, i) => (
                   <tr key={i}>
                     {selectable && (
@@ -2054,7 +2382,7 @@ export default function DataTable<T = Record<string, unknown>>({
                 data.length === 0 && inlineAddVariant === 'footer' && inlineAddRow ? null : (
                   <tr>
                     <td
-                      colSpan={orderedCols.length + (selectable ? 1 : 0) + 1}
+                      colSpan={totalColumnCount}
                       // Empty-state row needs its own bottom border: data
                       // rows draw their divider via each td's borderBottom,
                       // but the empty-state td has zero padding/borders by
@@ -2087,7 +2415,7 @@ export default function DataTable<T = Record<string, unknown>>({
                           <EmptyStateIconCircle>
                             <DataEmptyIcon size={24} color={theme.semantic.primary.main} />
                           </EmptyStateIconCircle>
-                          <span>{emptyMessage}</span>
+                          <span>{resolvedEmptyMessage}</span>
                         </div>
                       ) : (
                         <EmptyStateContainer>
@@ -2095,7 +2423,7 @@ export default function DataTable<T = Record<string, unknown>>({
                             <DataEmptyIcon size={24} color={theme.semantic.primary.main} />
                           </EmptyStateIconCircle>
                           <EmptyStateTitle>
-                            {emptyMessage}
+                            {resolvedEmptyMessage}
                           </EmptyStateTitle>
                           <EmptyStateDescription>
                             Try adjusting your search or filters to find what you&apos;re looking for.
@@ -2109,36 +2437,93 @@ export default function DataTable<T = Record<string, unknown>>({
                 pageRows.map((row, rowIdx) => {
                   const absIdx = (safePage - 1) * pageSize + rowIdx;
                   const key = rowKey(row, absIdx);
-                  const isSelected = selectedRows.has(key);
+                  const isSelected = selectedRows.has(key) || selectedRowId === key;
+                  const rowProps =
+                    typeof getRowProps === 'function' ? getRowProps(row, rowIdx) : getRowProps;
+                  const rowStyle = mergeStyle({
+                    backgroundColor: isSelected
+                      ? T.rowSelected
+                      : rowIdx % 2 === 1
+                        ? T.rowStripe
+                        : T.rowBase,
+                    cursor: onRowClick ? 'pointer' : 'default',
+                    transition: 'background-color 0.1s',
+                  }, rowProps?.style);
                   return (
                     <tr
+                      {...rowProps}
                       key={String(key)}
-                      onClick={onRowClick ? () => onRowClick(row) : undefined}
-                      tabIndex={onRowClick ? 0 : undefined}
-                      role={onRowClick ? 'button' : undefined}
+                      draggable={draggableRows || rowProps?.draggable}
+                      onClick={(e) => {
+                        rowProps?.onClick?.(e);
+                        if (!e.defaultPrevented) onRowClick?.(row);
+                      }}
+                      tabIndex={rowProps?.tabIndex ?? (onRowClick ? 0 : undefined)}
+                      role={rowProps?.role ?? (onRowClick ? 'button' : undefined)}
                       onKeyDown={
                         onRowClick
                           ? (e) => {
+                              rowProps?.onKeyDown?.(e);
+                              if (e.defaultPrevented) return;
                               if (e.key === 'Enter' || e.key === ' ') {
                                 e.preventDefault();
                                 onRowClick(row);
                               }
                             }
-                          : undefined
+                          : rowProps?.onKeyDown
                       }
-                      style={{
-                        backgroundColor: isSelected
-                          ? T.rowSelected
-                          : rowIdx % 2 === 1
-                            ? T.rowStripe
-                            : T.rowBase,
-                        cursor: onRowClick ? 'pointer' : 'default',
-                        transition: 'background-color 0.1s',
+                      onDragStart={(e) => {
+                        rowProps?.onDragStart?.(e);
+                        if (e.defaultPrevented) return;
+                        if (!draggableRows) return;
+                        dragColIdRef.current = key;
+                        e.dataTransfer.effectAllowed = 'move';
+                        onRowDragStart?.({ row, rowIndex: rowIdx, absoluteIndex: absIdx, event: e });
                       }}
+                      onDragOver={(e) => {
+                        rowProps?.onDragOver?.(e);
+                        if (e.defaultPrevented) return;
+                        if (!draggableRows) return;
+                        e.preventDefault();
+                        onRowDragOver?.({ row, rowIndex: rowIdx, absoluteIndex: absIdx, event: e });
+                      }}
+                      onDrop={(e) => {
+                        rowProps?.onDrop?.(e);
+                        if (e.defaultPrevented) return;
+                        if (!draggableRows) return;
+                        e.preventDefault();
+                        const sourceKey = dragColIdRef.current;
+                        const sourceIndex = pageRows.findIndex((candidate, candidateIdx) =>
+                          rowKey(candidate, (safePage - 1) * pageSize + candidateIdx) === sourceKey
+                        );
+                        if (sourceIndex === -1) return;
+                        const sourceRow = pageRows[sourceIndex];
+                        const sourceAbsoluteIndex = (safePage - 1) * pageSize + sourceIndex;
+                        onRowDrop?.({
+                          row,
+                          rowIndex: rowIdx,
+                          absoluteIndex: absIdx,
+                          sourceRow,
+                          sourceIndex,
+                          sourceAbsoluteIndex,
+                          event: e,
+                        });
+                        onRowReorder?.(sourceAbsoluteIndex, absIdx, sourceRow, row);
+                      }}
+                      onDragEnd={(e) => {
+                        rowProps?.onDragEnd?.(e);
+                        if (draggableRows) {
+                          onRowDragEnd?.({ row, rowIndex: rowIdx, absoluteIndex: absIdx, event: e });
+                          dragColIdRef.current = null;
+                        }
+                      }}
+                      style={rowStyle}
                       onMouseEnter={(e) => {
+                        rowProps?.onMouseEnter?.(e);
                         if (!isSelected) e.currentTarget.style.backgroundColor = T.muted;
                       }}
                       onMouseLeave={(e) => {
+                        rowProps?.onMouseLeave?.(e);
                         e.currentTarget.style.backgroundColor = isSelected
                           ? T.rowSelected
                           : rowIdx % 2 === 1
@@ -2182,8 +2567,8 @@ export default function DataTable<T = Record<string, unknown>>({
                             width: 0,
                             padding: `${cellPy} ${cellPx}`,
                             whiteSpace: 'nowrap',
-                            position: 'sticky',
-                            left: selectable ? 48 : 0,
+                            position: stickyActionsColumn ? 'sticky' : undefined,
+                            left: stickyActionsColumn ? (selectable ? 48 : 0) : undefined,
                             zIndex: 1,
                             backgroundColor: isSelected
                               ? T.rowSelected
@@ -2192,25 +2577,31 @@ export default function DataTable<T = Record<string, unknown>>({
                                 : T.rowBase,
                             borderRight: `1px solid ${T.border}`,
                             borderBottom: `1px solid ${T.border}`,
-                            boxShadow: hasLeft ? '6px 0 12px var(--sc-dt-sticky-shadow)' : 'none',
+                            boxShadow: stickyActionsColumn && hasLeft ? '6px 0 12px var(--sc-dt-sticky-shadow)' : 'none',
                           }}
                         >
-                          {actionCell && (
+                          {(actionCell || rowActions?.length) && (
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                              {actionCell(row)}
+                              {renderRowActions(row)}
                             </div>
                           )}
                         </td>
                       )}
                       {orderedCols.map((col) => {
                         const value = getValue(row, col);
+                        const isStickyFirstColumn = stickyFirstColId === col.id;
+                        const cellProps = col.getCellProps?.(row, absIdx, value);
                         return (
                           <td
+                            {...cellProps}
                             key={col.id}
-                            style={{
+                            style={mergeStyle({
                               padding: `${cellPy} ${cellPx}`,
                               ...theme.customTypography.body1.regular,
                               color: T.fg,
+                              position: isStickyFirstColumn ? 'sticky' : cellProps?.style?.position,
+                              left: isStickyFirstColumn ? firstColumnLeft : cellProps?.style?.left,
+                              zIndex: isStickyFirstColumn ? 1 : cellProps?.style?.zIndex,
                               // Overflow behavior depends on the cell's mode:
                               //    wrapCells  `visible`, content grows vertically
                               //    always-editable  `visible`, the cell holds a
@@ -2259,7 +2650,11 @@ export default function DataTable<T = Record<string, unknown>>({
                                   : T.rowBase,
                               borderRight: `1px solid ${T.border}`,
                               borderBottom: `1px solid ${T.border}`,
-                            }}
+                              boxShadow:
+                                isStickyFirstColumn && hasLeft
+                                  ? '6px 0 12px var(--sc-dt-sticky-shadow)'
+                                  : cellProps?.style?.boxShadow,
+                            }, cellProps?.style)}
                           >
                             <div
                               style={{
@@ -2304,7 +2699,7 @@ export default function DataTable<T = Record<string, unknown>>({
                               }}
                             >
                               {col.cell ? (
-                                col.cell(value, row)
+                                col.cell(value, row, col, absIdx)
                               ) : (
                                 // Plain text / arrays need their own
                                 // truncation wrapper because `text-overflow:
@@ -2341,8 +2736,8 @@ export default function DataTable<T = Record<string, unknown>>({
                             width: 0,
                             padding: `${cellPy} ${cellPx}`,
                             whiteSpace: 'nowrap',
-                            position: 'sticky',
-                            right: 0,
+                            position: stickyActionsColumn ? 'sticky' : undefined,
+                            right: stickyActionsColumn ? 0 : undefined,
                             zIndex: 1,
                             backgroundColor: isSelected
                               ? T.rowSelected
@@ -2350,12 +2745,12 @@ export default function DataTable<T = Record<string, unknown>>({
                                 ? T.rowStripe
                                 : T.rowBase,
                             borderBottom: `1px solid ${T.border}`,
-                            boxShadow: hasRight ? '-6px 0 12px var(--sc-dt-sticky-shadow)' : 'none',
+                            boxShadow: stickyActionsColumn && hasRight ? '-6px 0 12px var(--sc-dt-sticky-shadow)' : 'none',
                           }}
                         >
-                          {actionCell && (
+                          {(actionCell || rowActions?.length) && (
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                              {actionCell(row)}
+                              {renderRowActions(row)}
                             </div>
                           )}
                         </td>
@@ -2385,7 +2780,7 @@ export default function DataTable<T = Record<string, unknown>>({
               */}
               {inlineAddVariant === 'inline' && onAddClick && (
                 <InlineAddTriggerRow>
-                  <td colSpan={orderedCols.length + (selectable ? 1 : 0) + 1}>
+                  <td colSpan={totalColumnCount}>
                     <InlineAddStickyWrap>
                       <BaseButton
                         variant="ghost"
@@ -2401,6 +2796,37 @@ export default function DataTable<T = Record<string, unknown>>({
                 </InlineAddTriggerRow>
               )}
             </tbody>
+            {hasColumnFooter && (
+              <tfoot>
+                <tr>
+                  {selectable && (
+                    <td style={{ padding: `${headerPy} ${cellPx}`, borderTop: `1px solid ${T.border}` }} />
+                  )}
+                  {showActionsColumn && actionPosition === 'left' && (
+                    <td style={{ padding: `${headerPy} ${cellPx}`, borderTop: `1px solid ${T.border}` }} />
+                  )}
+                  {orderedCols.map((col) => (
+                    <td
+                      key={col.id}
+                      style={{
+                        padding: `${headerPy} ${cellPx}`,
+                        ...theme.customTypography.body2.medium,
+                        color: T.fgSub,
+                        textAlign: col.align ?? 'left',
+                        borderTop: `1px solid ${T.border}`,
+                        borderRight: `1px solid ${T.border}`,
+                        backgroundColor: T.stickyStripe,
+                      }}
+                    >
+                      {typeof col.footer === 'function' ? col.footer(col) : col.footer}
+                    </td>
+                  ))}
+                  {showActionsColumn && actionPosition === 'right' && (
+                    <td style={{ padding: `${headerPy} ${cellPx}`, borderTop: `1px solid ${T.border}` }} />
+                  )}
+                </tr>
+              </tfoot>
+            )}
           </table>
           )}
         </ScrollContainerInner>
