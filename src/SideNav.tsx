@@ -175,7 +175,17 @@ export interface SideNavItem {
   id: string;
   label: string;
   icon?: React.ReactNode;
+  selectedIcon?: React.ReactNode;
   badge?: number;
+  href?: string;
+  disabled?: boolean;
+  onClick?: () => void;
+}
+
+export interface SideNavSection {
+  id: string;
+  items: SideNavItem[];
+  dividerAfter?: boolean;
 }
 
 /**
@@ -212,8 +222,9 @@ export interface SideNavProps {
   expanded?: boolean;
   onToggleExpand?: () => void;
   navItems?: SideNavItem[];
+  navSections?: SideNavSection[];
   activeItem?: string;
-  onNavItemClick?: (id: string) => void;
+  onNavItemClick?: (id: string, item?: SideNavItem) => void;
   companyName?: string;
   companyType?: string;
   companyLogo?: string;
@@ -228,6 +239,8 @@ export interface SideNavProps {
   onAddCompany?: () => void;
   version?: string;
   onVersionClick?: () => void;
+  footerContent?: React.ReactNode;
+  hideDefaultFooter?: boolean;
   sx?: object;
   // New props
   accountType?: AccountType;
@@ -321,20 +334,27 @@ function NavItemExpanded({
 }: {
   item: SideNavItem;
   isActive: boolean;
-  onClick?: (id: string) => void;
+  onClick?: (item: SideNavItem) => void;
 }) {
+  const NavButton = NavItemExpandedBtn as React.ElementType;
+
   return (
-    <NavItemExpandedBtn
+    <NavButton
       data-walkthrough-id={`sidenav-nav-${item.id}`}
+      component={item.href ? 'a' : 'button'}
+      href={item.href}
       isActive={isActive}
-      onClick={() => onClick?.(item.id)}
+      disabled={item.disabled}
+      onClick={() => onClick?.(item)}
     >
-      <NavItemIconBox isActive={isActive}>{item.icon}</NavItemIconBox>
+      <NavItemIconBox isActive={isActive}>
+        {isActive && item.selectedIcon ? item.selectedIcon : item.icon}
+      </NavItemIconBox>
       <NavItemLabel isActive={isActive}>{item.label}</NavItemLabel>
       {item.badge != null && item.badge > 0 && (
         <CounterBadge count={item.badge} variant="square" size="md" />
       )}
-    </NavItemExpandedBtn>
+    </NavButton>
   );
 }
 
@@ -347,18 +367,25 @@ function NavItemCollapsed({
 }: {
   item: SideNavItem;
   isActive: boolean;
-  onClick?: (id: string) => void;
+  onClick?: (item: SideNavItem) => void;
 }) {
+  const NavButton = NavItemCollapsedBtn as React.ElementType;
+
   return (
     <CollapsedItemRelativeBox>
-      <NavItemCollapsedBtn
+      <NavButton
         data-walkthrough-id={`sidenav-nav-${item.id}`}
+        component={item.href ? 'a' : 'button'}
+        href={item.href}
         isActive={isActive}
-        onClick={() => onClick?.(item.id)}
+        disabled={item.disabled}
+        onClick={() => onClick?.(item)}
         aria-label={item.label}
       >
-        <NavItemCollapsedIconBox isActive={isActive}>{item.icon}</NavItemCollapsedIconBox>
-      </NavItemCollapsedBtn>
+        <NavItemCollapsedIconBox isActive={isActive}>
+          {isActive && item.selectedIcon ? item.selectedIcon : item.icon}
+        </NavItemCollapsedIconBox>
+      </NavButton>
       {item.badge != null && item.badge > 0 && (
         <CollapsedBadgePosition>
           <CounterBadge count={item.badge} variant="square" size="md" />
@@ -759,13 +786,28 @@ function Divider() {
 
 // Footer
 
-function SideNavFooter({ version, onVersionClick }: { version: string; onVersionClick?: () => void }) {
+function SideNavFooter({
+  version,
+  onVersionClick,
+  footerContent,
+  hideDefaultFooter,
+}: {
+  version: string;
+  onVersionClick?: () => void;
+  footerContent?: React.ReactNode;
+  hideDefaultFooter?: boolean;
+}) {
   return (
     <SideNavFooterBox>
-      <SideNavVersionText isClickable={Boolean(onVersionClick)} onClick={onVersionClick}>
-        Schedule Closings vER {version}
-      </SideNavVersionText>
-      <SideNavLegalText>Privacy Policy &middot; Terms of Use</SideNavLegalText>
+      {!hideDefaultFooter && (
+        <>
+          <SideNavVersionText isClickable={Boolean(onVersionClick)} onClick={onVersionClick}>
+            Schedule Closings vER {version}
+          </SideNavVersionText>
+          <SideNavLegalText>Privacy Policy &middot; Terms of Use</SideNavLegalText>
+        </>
+      )}
+      {footerContent}
     </SideNavFooterBox>
   );
 }
@@ -782,6 +824,7 @@ export default function SideNav({
   userRole = '',
   userAvatar,
   navItems = [],
+  navSections,
   activeItem,
   onNavItemClick,
   onViewStaff,
@@ -792,6 +835,8 @@ export default function SideNav({
   onAddCompany,
   version = '1.0.0',
   onVersionClick,
+  footerContent,
+  hideDefaultFooter = false,
   sx,
   accountType = 'law-firm',
   impersonationMode = false,
@@ -813,6 +858,14 @@ export default function SideNav({
   onAddProfile,
 }: SideNavProps) {
   const handleToggle = useCallback(() => onToggleExpand?.(), [onToggleExpand]);
+  const resolvedNavSections = useMemo<SideNavSection[]>(
+    () => navSections ?? [{ id: 'main', items: navItems }],
+    [navItems, navSections],
+  );
+  const handleNavItemClick = useCallback((item: SideNavItem) => {
+    item.onClick?.();
+    onNavItemClick?.(item.id, item);
+  }, [onNavItemClick]);
 
   // CompanySwitcher: for CSP accounts, manage internal company selection state
   const isCSP = CSP_ACCOUNT_TYPES.includes(accountType);
@@ -1076,18 +1129,28 @@ export default function SideNav({
 
           {/* ── Nav links ── */}
           <SideNavNavList>
-            {navItems.map((item) => (
-              <NavItemExpanded
-                key={item.id}
-                item={item}
-                isActive={activeItem === item.id}
-                onClick={onNavItemClick}
-              />
+            {resolvedNavSections.map((section) => (
+              <React.Fragment key={section.id}>
+                {section.items.map((item) => (
+                  <NavItemExpanded
+                    key={item.id}
+                    item={item}
+                    isActive={activeItem === item.id}
+                    onClick={handleNavItemClick}
+                  />
+                ))}
+                {section.dividerAfter && <Divider />}
+              </React.Fragment>
             ))}
           </SideNavNavList>
 
           {/* ── Footer ── */}
-          <SideNavFooter version={version} onVersionClick={onVersionClick} />
+          <SideNavFooter
+            version={version}
+            onVersionClick={onVersionClick}
+            footerContent={footerContent}
+            hideDefaultFooter={hideDefaultFooter}
+          />
         </SideNavExpandedPanel>
       ) : (
         /* ━━━ COLLAPSED STATE ━━━ */
@@ -1097,13 +1160,17 @@ export default function SideNav({
 
           {/* Icon-only nav */}
           <SideNavCollapsedNavList>
-            {navItems.map((item) => (
-              <NavItemCollapsed
-                key={item.id}
-                item={item}
-                isActive={activeItem === item.id}
-                onClick={onNavItemClick}
-              />
+            {resolvedNavSections.map((section) => (
+              <React.Fragment key={section.id}>
+                {section.items.map((item) => (
+                  <NavItemCollapsed
+                    key={item.id}
+                    item={item}
+                    isActive={activeItem === item.id}
+                    onClick={handleNavItemClick}
+                  />
+                ))}
+              </React.Fragment>
             ))}
           </SideNavCollapsedNavList>
         </SideNavCollapsedPanel>
