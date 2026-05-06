@@ -92,11 +92,21 @@ export interface LoggedInHeaderNavItem {
   disabled?: boolean;
 }
 
+export interface LoggedInHeaderProfileMenuItem {
+  id: string;
+  label: string;
+  icon?: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+}
+
 export interface LoggedInHeaderProps {
   profileType?: LoggedInHeaderProfileType;
   impersonating?: boolean;
   userName?: string;
   userEmail?: string;
+  avatarSrc?: string;
+  profileImageSrc?: string;
   breakpoint?: LoggedInHeaderBreakpoint;
   onMenuClick?: () => void;
   onDrawerOpenChange?: (open: boolean) => void;
@@ -111,8 +121,12 @@ export interface LoggedInHeaderProps {
   onNavItemClick?: (item: LoggedInHeaderNavItem) => void;
   drawerActiveItem?: string;
   navItems?: LoggedInHeaderNavItem[];
+  profileMenuItems?: LoggedInHeaderProfileMenuItem[];
   hideActions?: boolean;
   hideMenuButton?: boolean;
+  hideResources?: boolean;
+  hideNotifications?: boolean;
+  hideLogout?: boolean;
   disableSettings?: boolean;
   disableScheduleClosing?: boolean;
   homeHref?: string;
@@ -280,6 +294,19 @@ function ViewingModeBadge({ config, href = '#' }: { config: ProfileConfig; href?
   );
 }
 
+function ProfileImage({ src, userName, size }: { src?: string; userName: string; size: number }) {
+  return (
+    <ImagePlaceholder
+      placeholderType={src ? 'Image' : 'Initials'}
+      src={src}
+      name={userName}
+      alt={userName}
+      shape="Circle"
+      size={size}
+    />
+  );
+}
+
 function DropdownItem({ icon, label, onClick, trailing, disabled }: DropdownItemProps) {
   if (trailing) {
     return (
@@ -339,6 +366,8 @@ export default function LoggedInHeader({
   impersonating = false,
   userName = 'Larry Thompson',
   userEmail = 'larry@email.com',
+  avatarSrc,
+  profileImageSrc,
   breakpoint,
   onMenuClick,
   onDrawerOpenChange,
@@ -353,8 +382,12 @@ export default function LoggedInHeader({
   onNavItemClick,
   drawerActiveItem = 'dashboard',
   navItems,
+  profileMenuItems = [],
   hideActions = false,
   hideMenuButton = false,
+  hideResources = false,
+  hideNotifications = false,
+  hideLogout = false,
   disableSettings = false,
   disableScheduleClosing = false,
   homeHref = '/',
@@ -383,6 +416,7 @@ export default function LoggedInHeader({
   const profileDrawerPaperSx = useMemo(() => getProfileDrawerPaperStyles(theme), [theme]);
   const fullLogoStyles = useMemo(() => getFullLogoStyles(darkMode), [darkMode]);
   const symbolLogoStyles = useMemo(() => getSymbolLogoStyles(darkMode), [darkMode]);
+  const resolvedProfileImageSrc = avatarSrc ?? profileImageSrc;
 
   const defaultNavItems = useMemo<LoggedInHeaderNavItem[]>(() => [
     { id: 'dashboard', label: 'Dashboard', icon: <MeterIcon size={20} color={theme.semantic.text.primary} /> },
@@ -443,11 +477,22 @@ export default function LoggedInHeader({
         label="Accessibility Options"
         onClick={() => handleProfileMenuAction(onAccessibilityClick)}
       />
-      <DropdownItem
-        icon={<LogoutIcon size={20} color={theme.semantic.text.primary} />}
-        label="Logout"
-        onClick={() => handleProfileMenuAction(onLogout)}
-      />
+      {profileMenuItems.map((item) => (
+        <DropdownItem
+          key={item.id}
+          icon={item.icon ?? <Box aria-hidden="true" sx={{ width: 20, height: 20 }} />}
+          label={item.label}
+          onClick={() => handleProfileMenuAction(item.onClick)}
+          disabled={item.disabled}
+        />
+      ))}
+      {!hideLogout && (
+        <DropdownItem
+          icon={<LogoutIcon size={20} color={theme.semantic.text.primary} />}
+          label="Logout"
+          onClick={() => handleProfileMenuAction(onLogout)}
+        />
+      )}
     </>
   );
 
@@ -513,16 +558,20 @@ export default function LoggedInHeader({
                     <AddIcon color={theme.semantic.primary.contrastText} />
                   </LIScheduleClosingIconBtn>
 
-                  <LIResourcesIconBtn aria-label="Resources" onClick={onResourcesClick}>
-                    <DocumentViewIcon color={theme.semantic.text.secondary} />
-                  </LIResourcesIconBtn>
-                  <LINotificationsIconBtn
-                    data-walkthrough-id="header-notifications"
-                    aria-label="Notifications"
-                    onClick={onNotificationsClick}
-                  >
-                    <NotificationIcon size={24} color={theme.semantic.text.secondary} />
-                  </LINotificationsIconBtn>
+                  {!hideResources && (
+                    <LIResourcesIconBtn aria-label="Resources" onClick={onResourcesClick}>
+                      <DocumentViewIcon color={theme.semantic.text.secondary} />
+                    </LIResourcesIconBtn>
+                  )}
+                  {!hideNotifications && (
+                    <LINotificationsIconBtn
+                      data-walkthrough-id="header-notifications"
+                      aria-label="Notifications"
+                      onClick={onNotificationsClick}
+                    >
+                      <NotificationIcon size={24} color={theme.semantic.text.secondary} />
+                    </LINotificationsIconBtn>
+                  )}
                 </>
               )}
 
@@ -533,7 +582,7 @@ export default function LoggedInHeader({
                 aria-expanded={menuOpen}
                 aria-haspopup="true"
               >
-                <ImagePlaceholder placeholderType="Initials" name={userName} alt={userName} shape="Circle" size={32} />
+                <ProfileImage src={resolvedProfileImageSrc} userName={userName} size={32} />
                 {menuOpen
                   ? <ChevronUpIcon size={20} color={theme.semantic.text.primary} />
                   : <ChevronDownIcon size={20} color={theme.semantic.text.primary} />}
@@ -559,7 +608,7 @@ export default function LoggedInHeader({
             </Box>
 
             <LIMobileRightCol>
-              {!hideActions && (
+              {!hideActions && !hideNotifications && (
                 <LIMobileNotificationsBtn aria-label="Notifications" onClick={onNotificationsClick}>
                   <NotificationIcon size={24} color={theme.semantic.text.secondary} />
                 </LIMobileNotificationsBtn>
@@ -570,7 +619,7 @@ export default function LoggedInHeader({
                 aria-label="Open profile"
                 aria-haspopup="true"
               >
-                <ImagePlaceholder placeholderType="Initials" name={userName} alt={userName} shape="Circle" size={32} />
+                <ProfileImage src={resolvedProfileImageSrc} userName={userName} size={32} />
               </LIProfileButton>
             </LIMobileRightCol>
           </LIMobileRow>
@@ -586,7 +635,7 @@ export default function LoggedInHeader({
         slotProps={{ paper: { sx: popoverPaperSx } }}
       >
         <LIProfileHeaderBox>
-          <ImagePlaceholder placeholderType="Initials" name={userName} alt={userName} shape="Circle" size={72} />
+          <ProfileImage src={resolvedProfileImageSrc} userName={userName} size={72} />
           <LIProfileTextCol>
             <LIProfileNameText>{userName}</LIProfileNameText>
             <LIProfileEmailText>{userEmail}</LIProfileEmailText>
@@ -624,7 +673,7 @@ export default function LoggedInHeader({
             </LICloseIconBtn>
           </LIDrawerCloseBar>
           <LIDrawerProfileHeaderBox>
-            <ImagePlaceholder placeholderType="Initials" name={userName} alt={userName} shape="Circle" size={72} />
+            <ProfileImage src={resolvedProfileImageSrc} userName={userName} size={72} />
             <LIProfileTextCol>
               <LIProfileNameText>{userName}</LIProfileNameText>
               <LIProfileEmailText>{userEmail}</LIProfileEmailText>
