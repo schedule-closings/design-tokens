@@ -83,6 +83,15 @@ export type LoggedInHeaderProfileType =
 
 export type LoggedInHeaderBreakpoint = 'mobile' | 'tablet' | 'desktop';
 
+export interface LoggedInHeaderNavItem {
+  id: string;
+  label: string;
+  icon?: React.ReactNode;
+  href?: string;
+  onClick?: () => void;
+  disabled?: boolean;
+}
+
 export interface LoggedInHeaderProps {
   profileType?: LoggedInHeaderProfileType;
   impersonating?: boolean;
@@ -90,7 +99,18 @@ export interface LoggedInHeaderProps {
   userEmail?: string;
   breakpoint?: LoggedInHeaderBreakpoint;
   onMenuClick?: () => void;
+  onDrawerOpenChange?: (open: boolean) => void;
+  onProfileDrawerOpenChange?: (open: boolean) => void;
+  onSendInviteClick?: () => void;
+  onScheduleClosingClick?: () => void;
+  onResourcesClick?: () => void;
+  onNotificationsClick?: () => void;
+  onSettingsClick?: () => void;
+  onAccessibilityClick?: () => void;
+  onLogout?: () => void;
+  onNavItemClick?: (item: LoggedInHeaderNavItem) => void;
   drawerActiveItem?: string;
+  navItems?: LoggedInHeaderNavItem[];
   hideActions?: boolean;
   hideMenuButton?: boolean;
   disableSettings?: boolean;
@@ -98,6 +118,8 @@ export interface LoggedInHeaderProps {
   homeHref?: string;
   fullLogoSrc?: string;
   symbolLogoSrc?: string;
+  logoAlt?: string;
+  viewingModeHref?: string;
 }
 
 interface ProfileConfig {
@@ -112,12 +134,6 @@ interface DropdownItemProps {
   onClick?: () => void;
   trailing?: React.ReactNode;
   disabled?: boolean;
-}
-
-interface NavItem {
-  id: string;
-  label: string;
-  icon: React.ReactNode;
 }
 
 function getProfileConfig(theme: Theme): Record<string, ProfileConfig> {
@@ -241,7 +257,7 @@ function UserMultipleIcon(props: IconProps) {
   );
 }
 
-function ViewingModeBadge({ config }: { config: ProfileConfig }) {
+function ViewingModeBadge({ config, href = '#' }: { config: ProfileConfig; href?: string }) {
   return (
     <>
       <LIViewingDesktopBox sx={{ display: { xs: 'none', md: 'flex' } }}>
@@ -251,7 +267,7 @@ function ViewingModeBadge({ config }: { config: ProfileConfig }) {
             Viewing Mode
           </LIViewingText>
         </LIViewingPill>
-        <LIViewingLink href="#">{config.linkLabel}</LIViewingLink>
+        <LIViewingLink href={href}>{config.linkLabel}</LIViewingLink>
       </LIViewingDesktopBox>
       <LIViewingMobilePill
         sx={{ display: { xs: 'inline-flex', md: 'none' } }}
@@ -293,21 +309,26 @@ function DrawerNav({
   activeItem,
   onItemClick,
 }: {
-  items: NavItem[];
+  items: LoggedInHeaderNavItem[];
   activeItem: string;
-  onItemClick: () => void;
+  onItemClick: (item: LoggedInHeaderNavItem) => void;
 }) {
+  const NavDrawerItem = LINavDrawerItem as React.ElementType;
+
   return (
     <LINavDrawerList>
       {items.map((item) => (
-        <LINavDrawerItem
+        <NavDrawerItem
           key={item.id}
+          component={item.href ? 'a' : 'button'}
+          href={item.href}
           isActive={item.id === activeItem}
-          onClick={onItemClick}
+          disabled={item.disabled}
+          onClick={() => onItemClick(item)}
         >
           {item.icon}
           <LINavDrawerItemLabel>{item.label}</LINavDrawerItemLabel>
-        </LINavDrawerItem>
+        </NavDrawerItem>
       ))}
     </LINavDrawerList>
   );
@@ -320,7 +341,18 @@ export default function LoggedInHeader({
   userEmail = 'larry@email.com',
   breakpoint,
   onMenuClick,
+  onDrawerOpenChange,
+  onProfileDrawerOpenChange,
+  onSendInviteClick,
+  onScheduleClosingClick,
+  onResourcesClick,
+  onNotificationsClick,
+  onSettingsClick,
+  onAccessibilityClick,
+  onLogout,
+  onNavItemClick,
   drawerActiveItem = 'dashboard',
+  navItems,
   hideActions = false,
   hideMenuButton = false,
   disableSettings = false,
@@ -328,6 +360,8 @@ export default function LoggedInHeader({
   homeHref = '/',
   fullLogoSrc = '/logos/logo-full-blue.svg',
   symbolLogoSrc = '/logos/logo-symbol-blue.svg',
+  logoAlt = 'Schedule Closings',
+  viewingModeHref = '#',
 }: LoggedInHeaderProps) {
   const theme = useTheme();
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
@@ -350,7 +384,7 @@ export default function LoggedInHeader({
   const fullLogoStyles = useMemo(() => getFullLogoStyles(darkMode), [darkMode]);
   const symbolLogoStyles = useMemo(() => getSymbolLogoStyles(darkMode), [darkMode]);
 
-  const navItems = useMemo<NavItem[]>(() => [
+  const defaultNavItems = useMemo<LoggedInHeaderNavItem[]>(() => [
     { id: 'dashboard', label: 'Dashboard', icon: <MeterIcon size={20} color={theme.semantic.text.primary} /> },
     { id: 'documents', label: 'My Documents', icon: <DocumentViewIcon size={20} color={theme.semantic.text.primary} /> },
     { id: 'pipeline', label: 'Pipeline', icon: <PipelineIcon size={20} color={theme.semantic.text.primary} /> },
@@ -358,19 +392,44 @@ export default function LoggedInHeader({
     { id: 'connections', label: 'Connections', icon: <UserMultipleIcon size={20} color={theme.semantic.text.primary} /> },
     { id: 'settings', label: 'Settings', icon: <SettingsAdjustIcon size={20} color={theme.semantic.text.primary} /> },
   ], [theme]);
+  const resolvedNavItems = navItems ?? defaultNavItems;
 
   const handleToggleMenu = useCallback((event: React.MouseEvent<HTMLElement>) => {
     setMenuAnchor((prev) => (prev ? null : event.currentTarget));
   }, []);
   const handleCloseMenu = useCallback(() => setMenuAnchor(null), []);
-  const handleCloseProfileDrawer = useCallback(() => setProfileDrawerOpen(false), []);
+  const openNavDrawer = useCallback(() => {
+    setNavDrawerOpen(true);
+    onDrawerOpenChange?.(true);
+  }, [onDrawerOpenChange]);
+  const closeNavDrawer = useCallback(() => {
+    setNavDrawerOpen(false);
+    onDrawerOpenChange?.(false);
+  }, [onDrawerOpenChange]);
+  const openProfileDrawer = useCallback(() => {
+    setProfileDrawerOpen(true);
+    onProfileDrawerOpenChange?.(true);
+  }, [onProfileDrawerOpenChange]);
+  const handleCloseProfileDrawer = useCallback(() => {
+    setProfileDrawerOpen(false);
+    onProfileDrawerOpenChange?.(false);
+  }, [onProfileDrawerOpenChange]);
+  const handleNavItemClick = useCallback((item: LoggedInHeaderNavItem) => {
+    item.onClick?.();
+    onNavItemClick?.(item);
+    closeNavDrawer();
+  }, [closeNavDrawer, onNavItemClick]);
+  const handleProfileMenuAction = useCallback((action?: () => void) => {
+    handleCloseMenu();
+    action?.();
+  }, [handleCloseMenu]);
 
   const profileMenu = (
     <>
       <DropdownItem
         icon={<SettingsAdjustIcon size={20} color={theme.semantic.text.primary} />}
         label="Settings"
-        onClick={handleCloseMenu}
+        onClick={() => handleProfileMenuAction(onSettingsClick)}
         disabled={disableSettings}
       />
       <DropdownItem
@@ -382,12 +441,12 @@ export default function LoggedInHeader({
       <DropdownItem
         icon={<AccessibilityAltIcon size={20} color={theme.semantic.text.primary} />}
         label="Accessibility Options"
-        onClick={handleCloseMenu}
+        onClick={() => handleProfileMenuAction(onAccessibilityClick)}
       />
       <DropdownItem
         icon={<LogoutIcon size={20} color={theme.semantic.text.primary} />}
         label="Logout"
-        onClick={handleCloseMenu}
+        onClick={() => handleProfileMenuAction(onLogout)}
       />
     </>
   );
@@ -402,17 +461,17 @@ export default function LoggedInHeader({
                 <Box
                   component="img"
                   src={fullLogoSrc}
-                  alt="Schedule Closings"
+                  alt={logoAlt}
                   sx={{ ...fullLogoStyles, display: showDesktopOnly ?? { md: 'none', lg: 'block' } }}
                 />
                 <Box
                   component="img"
                   src={symbolLogoSrc}
-                  alt="Schedule Closings"
+                  alt={logoAlt}
                   sx={{ ...symbolLogoStyles, display: showTabletOnly ?? { md: 'block', lg: 'none' } }}
                 />
               </Box>
-              {profileConfig && <ViewingModeBadge config={profileConfig} />}
+              {profileConfig && <ViewingModeBadge config={profileConfig} href={viewingModeHref} />}
             </LILeftBox>
 
             <LIRightBox>
@@ -422,12 +481,14 @@ export default function LoggedInHeader({
                     variant="outline"
                     color="secondary"
                     endIcon={<EmailInviteIcon />}
+                    onClick={onSendInviteClick}
                     sx={{ display: showDesktopOnly ?? { md: 'none', lg: 'inline-flex' } }}
                   >
                     Send Invite
                   </BaseButton>
                   <LISendInviteIconBtn
                     aria-label="Send invite"
+                    onClick={onSendInviteClick}
                     sx={{ display: showTabletOnly ?? { md: 'flex', lg: 'none' } }}
                   >
                     <EmailInviteIcon color={theme.semantic.secondary.main} />
@@ -438,6 +499,7 @@ export default function LoggedInHeader({
                     color="primary"
                     endIcon={<AddIcon />}
                     disabled={disableScheduleClosing}
+                    onClick={onScheduleClosingClick}
                     sx={{ display: showDesktopOnly ?? { md: 'none', lg: 'inline-flex' } }}
                   >
                     Schedule Closing
@@ -445,15 +507,20 @@ export default function LoggedInHeader({
                   <LIScheduleClosingIconBtn
                     aria-label="Schedule closing"
                     disabled={disableScheduleClosing}
+                    onClick={onScheduleClosingClick}
                     sx={{ display: showTabletOnly ?? { md: 'flex', lg: 'none' } }}
                   >
                     <AddIcon color={theme.semantic.primary.contrastText} />
                   </LIScheduleClosingIconBtn>
 
-                  <LIResourcesIconBtn aria-label="Resources">
+                  <LIResourcesIconBtn aria-label="Resources" onClick={onResourcesClick}>
                     <DocumentViewIcon color={theme.semantic.text.secondary} />
                   </LIResourcesIconBtn>
-                  <LINotificationsIconBtn data-walkthrough-id="header-notifications" aria-label="Notifications">
+                  <LINotificationsIconBtn
+                    data-walkthrough-id="header-notifications"
+                    aria-label="Notifications"
+                    onClick={onNotificationsClick}
+                  >
                     <NotificationIcon size={24} color={theme.semantic.text.secondary} />
                   </LINotificationsIconBtn>
                 </>
@@ -479,27 +546,27 @@ export default function LoggedInHeader({
               {!hideMenuButton && (
                 <LIHamburgerBtn
                   aria-label="Open menu"
-                  onClick={() => (onMenuClick ? onMenuClick() : setNavDrawerOpen(true))}
+                  onClick={() => (onMenuClick ? onMenuClick() : openNavDrawer())}
                 >
                   <MenuIcon size={24} color={theme.semantic.text.primary} />
                 </LIHamburgerBtn>
               )}
-              {profileConfig && <ViewingModeBadge config={profileConfig} />}
+              {profileConfig && <ViewingModeBadge config={profileConfig} href={viewingModeHref} />}
             </LIMobileLeftCol>
 
             <Box component="a" href={homeHref} sx={logoLinkStyles}>
-              <Box component="img" src={symbolLogoSrc} alt="Schedule Closings" sx={symbolLogoStyles} />
+              <Box component="img" src={symbolLogoSrc} alt={logoAlt} sx={symbolLogoStyles} />
             </Box>
 
             <LIMobileRightCol>
               {!hideActions && (
-                <LIMobileNotificationsBtn aria-label="Notifications">
+                <LIMobileNotificationsBtn aria-label="Notifications" onClick={onNotificationsClick}>
                   <NotificationIcon size={24} color={theme.semantic.text.secondary} />
                 </LIMobileNotificationsBtn>
               )}
               <LIProfileButton
                 component="button"
-                onClick={() => setProfileDrawerOpen(true)}
+                onClick={openProfileDrawer}
                 aria-label="Open profile"
                 aria-haspopup="true"
               >
@@ -533,13 +600,13 @@ export default function LoggedInHeader({
         <Drawer
           anchor="left"
           open={navDrawerOpen}
-          onClose={() => setNavDrawerOpen(false)}
+          onClose={closeNavDrawer}
           PaperProps={{ sx: navDrawerPaperSx }}
         >
           <DrawerNav
-            items={navItems}
+            items={resolvedNavItems}
             activeItem={drawerActiveItem}
-            onItemClick={() => setNavDrawerOpen(false)}
+            onItemClick={handleNavItemClick}
           />
         </Drawer>
       )}
