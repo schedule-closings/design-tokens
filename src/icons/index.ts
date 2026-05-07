@@ -1,5 +1,6 @@
 export type { IconProps } from './createIcon';
 export { AddIcon } from './AddIcon';
+export { AppleIcon } from './AppleIcon';
 export { AlertFilledIcon } from './AlertFilledIcon';
 export { AlertOutlineIcon } from './AlertOutlineIcon';
 export { ApprovedChecklistIcon } from './ApprovedChecklistIcon';
@@ -47,8 +48,10 @@ export { LocationFilledIcon } from './LocationFilledIcon';
 export { LocationOutlineIcon } from './LocationOutlineIcon';
 export { LightFilledIcon } from './LightFilledIcon';
 export { LogoutIcon } from './LogoutIcon';
+export { MicrosoftIcon } from './MicrosoftIcon';
 export { MoonFilledIcon } from './MoonFilledIcon';
 export { NotificationIcon } from './NotificationIcon';
+export { OutlookIcon } from './OutlookIcon';
 export { PhoneIcon } from './PhoneIcon';
 export { PipelineIcon } from './PipelineIcon';
 export { ReleaseNotesIcon } from './ReleaseNotesIcon';
