@@ -1,6 +1,6 @@
 {
   "name": "@schedule-closings/design-tokens",
-  "version": "0.1.36",
+  "version": "0.1.37",
   "description": "Schedule Closings design tokens and theme sourced from scplayground",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -11,10 +11,12 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./package-versions.json": "./package-versions.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "package-versions.json"
   ],
   "sideEffects": false,
   "publishConfig": {
