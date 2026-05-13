@@ -60,8 +60,14 @@ export { default as CSPCard } from './CSPCard';
 export type { CSPCardMetaItem, CSPCardProps } from './CSPCard';
 export { default as CustomMap } from './CustomMap';
 export type { CustomMapProps, MapMarker } from './CustomMap';
-export { default as DataTable } from './DataTable';
-export type { ColumnDef, DataTableProps } from './DataTable';
+export { default as DataTable, NamePill, OfficePill, MoreDataIndicator } from './DataTable';
+export type {
+  ColumnDef,
+  DataTableProps,
+  NamePillProps,
+  OfficePillProps,
+  MoreDataIndicatorProps,
+} from './DataTable';
 export { default as FilterBar } from './FilterBar';
 export type { FilterBarProps, FilterCategory, FilterOption } from './FilterBar';
 export { default as FloatingDarkModeToggle } from './FloatingDarkModeToggle';
